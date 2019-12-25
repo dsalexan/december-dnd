@@ -1,10 +1,12 @@
+import { isNonstandardSource, getFilterGroup, sourceJSONToFullCompactPrefix } from '../source'
 import { makeFilter } from './factory'
 
 export default function() {
   const sourceFilter = makeFilter({
     header: 'Source',
-    defaults: []
-    // displayFn: ()
+    defaultFn: (val) => !isNonstandardSource(val),
+    groupFn: getFilterGroup,
+    displayFn: (item) => sourceJSONToFullCompactPrefix(item.data || item)
   })
 
   return {

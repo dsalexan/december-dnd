@@ -67,7 +67,7 @@
               <v-expansion-panel-content>
                 <div class="d-flex flex-row justify-end mb-2 align-center">
                   <v-btn
-                    @click="toogleMultiple(summary)"
+                    @click="summary.toogleMultiple()"
                     :color="summary.multiple ? 'grey darken-4' : 'grey darken-3'"
                     class="mr-4"
                     depressed
@@ -78,33 +78,35 @@
                   <v-btn
                     v-for="(group, index) in summary.groups"
                     :key="index"
-                    @click="toogleSummaryType(summary, summary.items[group])"
+                    @click="summary.setStateGroup(group)"
                     color="grey darken-2"
                     class="ma-1 text-uppercase"
                     depressed
                     small
-                    >{{ group }}</v-btn
+                    >{{ group.name }}</v-btn
                   >
 
                   <div class="btn-group ml-5">
                     <v-btn
-                      @click="includeAll(summary)"
+                      @click="summary.includeAll()"
                       color="grey darken-2"
                       class=" text-uppercase blue--text text--lighten-1"
                       depressed
                       small
                       >All</v-btn
                     >
-                    <v-btn @click="clearAll(summary)" color="grey darken-2" class=" text-uppercase" depressed small>Clear</v-btn>
+                    <v-btn @click="summary.unselectAll()" color="grey darken-2" class=" text-uppercase" depressed small
+                      >Clear</v-btn
+                    >
                     <v-btn
-                      @click="excludeAll(summary)"
+                      @click="summary.excludeAll()"
                       color="grey darken-2"
                       class=" text-uppercase red--text text--lighten-1"
                       depressed
                       small
                       >None</v-btn
                     >
-                    <v-btn @click="selectDefault(summary)" color="grey darken-2" class=" text-uppercase" depressed small
+                    <v-btn @click="summary.selectDefault()" color="grey darken-2" class=" text-uppercase" depressed small
                       >Default</v-btn
                     >
                   </div>
@@ -114,7 +116,7 @@
                   <v-btn
                     v-for="(item, index) in group"
                     :key="index"
-                    @click="toogleState(item)"
+                    @click="item.toogleState()"
                     :color="entryColor(item.state)"
                     class="ma-1"
                     depressed
@@ -209,30 +211,32 @@ export default {
     }
   },
   computed: {
+    ...mapState('ui/filter/character', ['filters']),
     summaries() {
-      return Object.keys(this.$props.filter.filters).map(
-        function(key) {
-          const summary = this.$props.filter.filters[key]
-          return {
-            ...summary,
-            key,
-            groups: Object.keys(summary.items)
-          }
-        }.bind(this)
-      )
+      return Object.values(this.filters)
     }
   },
   mounted() {
-    this.loadBestiary().then(
-      function(loadedSources) {
-        Object.keys(loadedSources)
-          // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
-          .forEach((fi) => this.filter.filters.source.addItem(fi))
+    this.filterInit().then(
+      function() {
+        this.loadBestiary().then(
+          function(loadedSources) {
+            this.filters.source.clear()
+            Object.keys(loadedSources)
+              // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
+              .forEach((fi) => this.filters.source.addItem(fi))
+
+            console.log('MOUNTED', this.filters)
+          }.bind(this)
+        )
       }.bind(this)
     )
   },
   methods: {
     ...mapActions('tools', ['loadBestiary']),
+    ...mapActions('ui/filter/character', {
+      filterInit: 'init'
+    }),
     removeTag(id) {
       const index = this.tags.findIndex((t) => t.id === id)
       this.tags.splice(index, 1)
@@ -244,55 +248,12 @@ export default {
       else if (state === STATES.INCLUDE_ENTRY) return 'blue darken-3'
       else if (state === STATES.EXCLUDE_ENTRY) return 'red darken-3'
     },
-    toogleState(item) {
-      item.state = STATES_PROGRESSION[item.state]
-    },
 
     showAll() {
       this.panel = [...Array(this.summaries.length).keys()]
     },
     hideAll() {
       this.panel = []
-    },
-    toogleMultiple(summary) {
-      summary.multiple = !summary.multiple
-    },
-    clearAll(summary) {
-      for (const group in summary.items) {
-        for (const item of summary.items[group]) {
-          if (item.state !== STATES.INACTIVE) item.state = STATES.INACTIVE
-        }
-      }
-    },
-    includeAll(summary) {
-      for (const group in summary.items) {
-        this.toogleSummaryType(summary, summary.items[group], false, STATES.INCLUDE_ENTRY)
-      }
-    },
-    excludeAll(summary) {
-      for (const group in summary.items) {
-        this.toogleSummaryType(summary, summary.items[group], false, STATES.EXCLUDE_ENTRY)
-      }
-    },
-    selectDefault(summary) {
-      for (const group in summary.items) {
-        for (const item of summary.items[group]) {
-          if (summary.defaultFn(item)) item.state = STATES.INCLUDE_ENTRY
-        }
-      }
-    },
-    toogleSummaryType(summary, group, clear = undefined, value = STATES.INCLUDE_ENTRY) {
-      if (clear === undefined) {
-        clear = !summary.multiple
-      }
-
-      if (clear) {
-        this.clearAll(summary)
-      }
-
-      for (const item of group) {
-        item.state = value
-      }
     }
   }
 }

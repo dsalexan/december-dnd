@@ -5,6 +5,7 @@ import { modifier } from '@/utils/system'
 import * as Rolls from '@/utils/rolls'
 
 import * as Schemas from '@/schemas/character'
+import { sort as ascSort, compareListNames, sortCR } from '~/utils/sort'
 
 /**
  * @typedef {Object} Character
@@ -101,13 +102,33 @@ export function creatureLevelCRText(character) {
  * @param {Character} character
  * @returns {Number} Total character level
  */
-export function creatureLevel(character) {
+export function creatureLevel(character, fallback) {
   let level = character.level
+
+  if (level === undefined) return fallback
+
   if (!_.isArray(level)) {
     level = [level]
   }
 
   return level.reduce((sum, cur) => sum + cur.level, 0)
+}
+
+export function sort(_a, _b, { sortBy }) {
+  const a = _a.data || _a
+  const b = _b.data || _b
+
+  if (sortBy === 'count') return ascSort(a.count, b.count) || compareListNames(a, b)
+  switch (sortBy) {
+    case 'name':
+      return compareListNames(a, b)
+    case 'type':
+      return ascSort(a.type.asText, b.type.asText) || compareListNames(a, b)
+    case 'source':
+      return ascSort(a.source, b.source) || compareListNames(a, b)
+    case 'cr':
+      return sortCR(a.cr || creatureLevel(a), b.cr || creatureLevel(b)) || compareListNames(a, b)
+  }
 }
 
 // factory
