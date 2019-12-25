@@ -30,7 +30,7 @@ export default {
   /*
    ** Plugins to load before mounting the App
    */
-  plugins: [],
+  plugins: ['~/plugins/toast.js', '~/plugins/string.js'],
   /*
    ** Nuxt.js dev-modules
    */

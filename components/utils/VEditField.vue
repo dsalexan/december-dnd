@@ -40,12 +40,10 @@ export default {
   },
   computed: {
     addedValue() {
-      if (
-        this.$props.add === null ||
-        this.$props.value === null ||
-        isNaN(parseInt(this.$props.value))
-      ) {
-        return this.$props.value
+      if (this.$props.add === null || this.$props.add === undefined) return this.$props.value
+
+      if (isNaN(parseInt(this.$props.value))) {
+        return '—'
       } else {
         return parseInt(this.$props.value) + this.$props.add
       }

@@ -1,0 +1,237 @@
+import { NUMBER_CLEAN_REGEXP } from './regex'
+
+import { toNumber as crToNumber } from './system/cr'
+import { LIST_ABILITIES } from './system/constants/abilities'
+
+// HELPERS
+/**
+ * Concretly returns the order between two variables
+ * @param  {any} a
+ * @param  {any} b
+ * @param  {Object} options Options object (order, lowercase)
+ * @returns {Integer} Order
+ */
+function _sort(_a, _b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
+  let a = _a
+  let b = _b
+
+  if (lowercase) {
+    a = typeof a === 'string' ? a.toLowerCase() : a
+    b = typeof b === 'string' ? b.toLowerCase() : b
+  }
+  if (uppercase) {
+    a = typeof a === 'string' ? a.toUpperCase() : a
+    b = typeof b === 'string' ? b.toUpperCase() : b
+  }
+
+  if (b === a) return 0
+  const c = b < a ? 1 : -1
+  return order === 'ASC' ? c : -1 * c
+}
+
+// EXPOSED - GENERAL
+/**
+ * Returns the order between two variables
+ * @param  {any} a Could be a FilterItem
+ * @param  {any} b Could be a FilterItem
+ * @param  {Object} order Options object (order, lowercase)
+ * @returns {Integer} Order
+ */
+export function sort(a, b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
+  if (a !== undefined && a !== null) a = a.item || a.data || a
+  if (b !== undefined && b !== null) b = b.item || b.data || b
+
+  return _sort(a, b, order)
+}
+
+/**
+ * Returns the order between two variables as LOWERCASE
+ * @param {String} prop Property name
+ * @param {any} a Could be comparable
+ * @param {any} b Could be comparable
+ * @returns {Integer} Order
+ */
+export function sortLower(a, b) {
+  return sort(a, b, { lowercase: true })
+}
+
+/**
+ * Returns the order between properties of two variables
+ * @param {String} prop Property name
+ * @param {any} a Could be comparable
+ * @param {any} b Could be comparable
+ * @param {Object} order Options object (order, lowercase)
+ * @returns {Integer} Order
+ */
+export function sortProp(prop, a, b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
+  return sort(a[prop], b[prop], { order, lowercase, uppercase })
+}
+
+/**
+ * Returns the order between values of two variables
+ * @param {String} key Property name
+ * @param {any} a Could be comparable
+ * @param {any} b Could be comparable
+ * @param {Object} order Options object (order, lowercase)
+ * @returns {Integer} Order
+ */
+export function sortValue(key, a, b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
+  return sort(a.values[key], b.values[key], { order, lowercase, uppercase })
+}
+
+/**
+ * Returns the order between two variables, wit tiebreaker being the numerical suffix
+ *
+ * WARNING: Slow
+ * @param {any} a Could be a FilterItem
+ * @param {any} b Could be a FilterItem
+ * @param {Object} order Options object (order, lowercase)
+ * @returns {Integer} Order
+ */
+export function sortNumericalSuffix(a, b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
+  function popEndNumber(str) {
+    const spl = str.split(' ')
+    return spl.last().isNumeric()
+      ? [spl.slice(0, -1).join(' '), Number(spl.last().replace(NUMBER_CLEAN_REGEXP, ''))]
+      : [spl.join(' '), 0]
+  }
+
+  const [aStr, aNum] = popEndNumber(a.item || a)
+  const [bStr, bNum] = popEndNumber(b.item || b)
+
+  const initialSort = sort(aStr, bStr)
+  if (initialSort) return initialSort
+  return sort(aNum, bNum, { order, lowercase, uppercase })
+}
+
+/**
+ * Returns the order between two dates
+ * @param {Date} a Datetime
+ * @param {Date} b Datetime
+ */
+export function sortDate(a, b) {
+  return b.getTime() - a.getTime()
+}
+
+// EXPOSED - OBJECT ORIENTED
+/**
+ * Returns the order between the names of the objects (in lowercase)
+ * @param {Object} a Object with name
+ * @param {Object} b Object with name
+ * @returns {Integer} Order
+ */
+export function compareListNames(a, b) {
+  return sortProp('name', a, b, { lowercase: true })
+  // return SortUtil._ascSort(a.name.toLowerCase(), b.name.toLowerCase())
+}
+
+/**
+ * Returns the order between values of the objects (in lowercase), tiebreaker is the name
+ * @param {Object} a Object has a name and values
+ * @param {Object} b Object has a name and values
+ * @param {Object} order Options object (order, lowercase, sortBy)
+ * @returns {Integer} Order
+ */
+export function listSort(a, b, { sortBy, order = 'ASC', lowercase = false, uppercase = false } = {}) {
+  if (sortBy === 'name') return sortProp('name', a, b, { lowercase: true })
+  // compareListNames
+  else return sortValue(sortBy, a, b, { lowercase: true }) || sortProp('name', a, b, { lowercase: true })
+}
+
+// EXPOSED - SYSTEM ORIENTED
+/**
+ * Returns the order between the cr of two objects
+ * @param {Object} a Object has a cr property
+ * @param {Object} b Object has a cr property
+ * @returns {Integer} Order
+ */
+export function sortCR(a, b) {
+  if (a !== undefined && a !== null) a = a.item || a
+  if (b !== undefined && b !== null) b = b.item || b
+
+  // always put unknown values last
+  if (a === 'Unknown' || a === undefined) a = '999'
+  if (b === 'Unknown' || b === undefined) b = '999'
+  return sort(crToNumber(a), crToNumber(b))
+}
+
+/**
+ * Returns the order between abilities of two objects
+ * @param {String} a Ability or "special"
+ * @param {String} b Ability or "special"
+ * @returns {Integer} Order
+ */
+export function sortAbilities(a, b) {
+  const aSpecial = a === 'special'
+  const bSpecial = b === 'special'
+  return aSpecial && bSpecial ? 0 : aSpecial ? 1 : bSpecial ? -1 : LIST_ABILITIES.indexOf(a) - LIST_ABILITIES.indexOf(b)
+}
+
+/**
+ * Returns the order between creature traits
+ *
+ * "Special Equipment" first, then alphabetical
+ * @param {String} a Trait
+ * @param {String} b Trait
+ * @returns {Integer} Order
+ */
+export function sortTraits(a, b) {
+  const _TRAIT_ORDER = ['special equipment', 'shapechanger']
+
+  if (!a && !b) return 0
+  const aClean = a.toLowerCase().trim()
+  const bClean = b.toLowerCase().trim()
+
+  const ixA = _TRAIT_ORDER.indexOf(aClean)
+  const ixB = _TRAIT_ORDER.indexOf(bClean)
+  if (~ixA && ~ixB) return ixA - ixB
+  else if (~ixA) return -1
+  else if (~ixB) return 1
+  else return sort(aClean, bClean)
+}
+
+/**
+ * Returns the order between two alignments
+ * @param {String[]} a Alignment Array, [LCN, GEN]
+ * @param {String[]} b Alignment Array, [LCN, GEN]
+ */
+export function sortAlignment(a, b) {
+  const _alignFirst = ['L', 'C']
+  const _alignSecond = ['G', 'E']
+
+  if (a === b) return 0
+  if (_alignFirst.includes(a)) return -1
+  if (_alignSecond.includes(a)) return 1
+  if (_alignFirst.includes(b)) return 1
+  if (_alignSecond.includes(b)) return -1
+  return 0
+}
+
+/**
+ * WHAT THE FUCK DIS DOES?
+ * @param {*} $wrpBtnsSort
+ * @param {*} list
+ */
+export function initBtnSortHandlers($wrpBtnsSort, list) {
+  function addCaret($btnSort, direction) {
+    $wrpBtnsSort.find('.caret').removeClass('caret')
+    $btnSort
+      .find('.caret_wrp')
+      .addClass('caret')
+      .toggleClass('caret--reverse', direction === 'asc')
+  }
+
+  const $btnSort = $wrpBtnsSort.find(`.sort[data-sort="${list.sortBy}"]`)
+  addCaret($btnSort, list.sortDir)
+
+  $wrpBtnsSort.find('.sort').each((i, e) => {
+    // eslint-disable-next-line no-undef
+    const $btnSort = $(e)
+    $btnSort.click((evt) => {
+      evt.stopPropagation()
+      const direction = list.sortDir === 'asc' ? 'desc' : 'asc'
+      addCaret($btnSort, direction)
+      list.sort($btnSort.data('sort'), direction)
+    })
+  })
+}

@@ -19,5 +19,13 @@ module.exports = {
   ],
   // add your custom rules here
   rules: {
+    camelcase: 'off',
+    'max-len': [
+      'error',
+      {
+        code: 130
+      }
+    ],
+    'vue/name-property-casing': 'off'
   }
 }

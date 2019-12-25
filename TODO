@@ -1,0 +1,12 @@
+Initiative Tracker:
+  ✔ Layout @done(19-12-22 04:21)
+    ✔ Highlight D20 button when there is no roll @done(19-12-22 16:00)
+    ☐ 5etools link to view the character
+    ✔ Toast when rolling dice @started(19-12-22 16:05) @done(19-12-22 16:53) @lasted(48m18s)
+    ☐ Make mobile (celular) compatible
+    ☐ DragNDrop to change initiative
+  ✔ Sync with state store (vuex) @done(19-12-22 19:08)
+  ☐ Sync store with data from 5etools
+    ☐ Probably write filter code to me able to search data/
+  ☐ Implement history os changes and undo/redo
+  ☐ Persist state
