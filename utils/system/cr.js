@@ -24,9 +24,11 @@ export function isValid(cr) {
 }
 
 export function toNumber(cr) {
-  if (cr === 'Unknown' || cr === '\u2014' || cr == null) return 100
+  if (cr === 'Unknown' || cr === '\u2014' || cr == null || cr === undefined) return 100
   if (cr.cr) return toNumber(cr.cr)
-  const parts = cr.trim().split('/')
+  const parts = String(cr)
+    .trim()
+    .split('/')
   if (parts.length === 1) return Number(parts[0])
   else if (parts.length === 2) return Number(parts[0]) / Number(parts[1])
   else return 0

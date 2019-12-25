@@ -9,6 +9,11 @@ import skills from './skills'
 import languages from './languages'
 import sizes from './sizes'
 import sources from './sources'
+import alignment from './alignment'
+import damage from './damage'
+import senses from './senses'
+import character from './character'
+import spellcasting from './spellcasting'
 
 export const ABBREVIATION_TO_FULL = abbreviations
 export const SINGULAR_TO_PLURAL = singulars
@@ -19,6 +24,11 @@ export const SKILLS = skills
 export const LANGUAGES = languages
 export const SIZES = sizes
 export const SOURCES = sources
+export const ALIGNMENT = alignment
+export const DAMAGE = damage
+export const SENSES = senses
+export const CHARACTER = character
+export const SPELLCASTING = spellcasting
 
 export default {
   ABILITIES,
@@ -26,5 +36,10 @@ export default {
   SKILLS,
   LANGUAGES,
   SIZES,
-  SOURCES
+  SOURCES,
+  ALIGNMENT,
+  DAMAGE,
+  SENSES,
+  CHARACTER,
+  SPELLCASTING
 }

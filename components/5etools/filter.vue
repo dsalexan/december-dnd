@@ -67,6 +67,7 @@
               <v-expansion-panel-content>
                 <div class="d-flex flex-row justify-end mb-2 align-center">
                   <v-btn
+                    v-if="summary.model.hasMultiple"
                     @click="summary.toogleMultiple()"
                     :color="summary.multiple ? 'grey darken-4' : 'grey darken-3'"
                     class="mr-4"
@@ -75,18 +76,19 @@
                     >Multiple</v-btn
                   >
 
-                  <v-btn
-                    v-for="(group, index) in summary.groups"
-                    :key="index"
-                    @click="summary.setStateGroup(group)"
-                    color="grey darken-2"
-                    class="ma-1 text-uppercase"
-                    depressed
-                    small
-                    >{{ group.name }}</v-btn
-                  >
+                  <div v-for="(group, index) in summary.groups" :key="index">
+                    <v-btn
+                      v-if="!group.hide"
+                      @click="summary.setStateGroup(group)"
+                      color="grey darken-2"
+                      class="ma-1 text-uppercase"
+                      depressed
+                      small
+                      >{{ group.name }}</v-btn
+                    >
+                  </div>
 
-                  <div class="btn-group ml-5">
+                  <div v-if="summary.model.hasGenericSelection" class="btn-group ml-5">
                     <v-btn
                       @click="summary.includeAll()"
                       color="grey darken-2"
@@ -113,16 +115,33 @@
                 </div>
                 <div v-for="(group, g) in summary.items" :key="g">
                   <v-divider class="my-1"></v-divider>
-                  <v-btn
-                    v-for="(item, index) in group"
-                    :key="index"
-                    @click="item.toogleState()"
-                    :color="entryColor(item.state)"
-                    class="ma-1"
-                    depressed
-                    small
-                    >{{ summary.displayFn(item) }}</v-btn
-                  >
+                  <template v-if="summary.model.type === 'tag'">
+                    <v-btn
+                      v-for="(item, index) in group"
+                      :key="index"
+                      @click="item.toogleState()"
+                      :color="entryColor(item.state)"
+                      class="ma-1"
+                      depressed
+                      small
+                      >{{ summary.displayFn(item) }}</v-btn
+                    >
+                  </template>
+                  <template v-else>
+                    <v-range-slider
+                      :min="summary.model.min || 0"
+                      :max="summary.model.max || group.length - 1"
+                      :value="summary.value"
+                      step="1"
+                      ticks="always"
+                      tick-size="2"
+                      thumb-label
+                    >
+                      <template v-slot:thumb-label="props">
+                        {{ summary.model.isLabelled ? group[props.value].data : props.value }}
+                      </template></v-range-slider
+                    >
+                  </template>
                 </div>
               </v-expansion-panel-content>
             </v-expansion-panel>
@@ -157,9 +176,7 @@ export default {
     return {
       // FILTER-DIALOG
       dialog: false,
-      panel: [0],
-      selected_summaries: {},
-      multiple_summaries: {},
+      panel: [],
       // RESULT-FORM
       tags: [
         {
@@ -211,7 +228,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('ui/filter/character', ['filters']),
+    ...mapState('ui/filter/character', ['filters', 'references']),
     summaries() {
       return Object.values(this.filters)
     }
@@ -220,19 +237,28 @@ export default {
     this.filterInit().then(
       function() {
         this.loadBestiary().then(
-          function(loadedSources) {
+          function({ loadedSources, meta, languages }) {
+            this.setReference({ key: 'languages', data: languages })
+            this.setReference({ key: 'meta', data: meta })
+
             this.filters.source.clear()
             Object.keys(loadedSources)
               // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
               .forEach((fi) => this.filters.source.addItem(fi))
 
-            console.log('MOUNTED', this.filters)
+            this.filters.language.clear()
+            Object.keys(languages)
+              // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
+              .forEach((key) => this.filters.language.addItem(key))
+
+            console.log('MOUNTED', this.references)
           }.bind(this)
         )
       }.bind(this)
     )
   },
   methods: {
+    ...mapMutations('ui/filter/character', ['setReference']),
     ...mapActions('tools', ['loadBestiary']),
     ...mapActions('ui/filter/character', {
       filterInit: 'init'

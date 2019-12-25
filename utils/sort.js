@@ -2,6 +2,7 @@ import { NUMBER_CLEAN_REGEXP } from './regex'
 
 import { toNumber as crToNumber } from './system/cr'
 import { LIST_ABILITIES } from './system/constants/abilities'
+import { ABILITIES } from './system/constants'
 
 // HELPERS
 /**
@@ -38,8 +39,8 @@ function _sort(_a, _b, { order = 'ASC', lowercase = false, uppercase = false } =
  * @returns {Integer} Order
  */
 export function sort(a, b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
-  if (a !== undefined && a !== null) a = a.item || a.data || a
-  if (b !== undefined && b !== null) b = b.item || b.data || b
+  if (a !== undefined && a !== null) a = a.data || a
+  if (b !== undefined && b !== null) b = b.data || b
 
   return _sort(a, b, order)
 }
@@ -96,8 +97,8 @@ export function sortNumericalSuffix(a, b, { order = 'ASC', lowercase = false, up
       : [spl.join(' '), 0]
   }
 
-  const [aStr, aNum] = popEndNumber(a.item || a)
-  const [bStr, bNum] = popEndNumber(b.item || b)
+  const [aStr, aNum] = popEndNumber(a.data || a)
+  const [bStr, bNum] = popEndNumber(b.data || b)
 
   const initialSort = sort(aStr, bStr)
   if (initialSort) return initialSort
@@ -138,6 +139,16 @@ export function listSort(a, b, { sortBy, order = 'ASC', lowercase = false, upper
   else return sortValue(sortBy, a, b, { lowercase: true }) || sortProp('name', a, b, { lowercase: true })
 }
 
+/**
+ * Returns the order between two values based on its positions in a list
+ * @param {Object} a
+ * @param {Object} b
+ * @param Object} list
+ */
+export function indexSort(a, b, list) {
+  return list.indexOf(a) - list.indexOf(b)
+}
+
 // EXPOSED - SYSTEM ORIENTED
 /**
  * Returns the order between the cr of two objects
@@ -146,8 +157,8 @@ export function listSort(a, b, { sortBy, order = 'ASC', lowercase = false, upper
  * @returns {Integer} Order
  */
 export function sortCR(a, b) {
-  if (a !== undefined && a !== null) a = a.item || a
-  if (b !== undefined && b !== null) b = b.item || b
+  if (a !== undefined && a !== null) a = a.data || a
+  if (b !== undefined && b !== null) b = b.data || b
 
   // always put unknown values last
   if (a === 'Unknown' || a === undefined) a = '999'
@@ -190,6 +201,7 @@ export function sortTraits(a, b) {
   else return sort(aClean, bClean)
 }
 
+// TODO: transfer specific sorting to domain or util constants?
 /**
  * Returns the order between two alignments
  * @param {String[]} a Alignment Array, [LCN, GEN]
@@ -205,6 +217,17 @@ export function sortAlignment(a, b) {
   if (_alignFirst.includes(b)) return 1
   if (_alignSecond.includes(b)) return -1
   return 0
+}
+
+export function sortMisc(_a, _b) {
+  let a = _a.data || _a
+  let b = _b.data || _b
+
+  if (a.includes('Spellcaster, ') && b.includes('Spellcaster, ')) {
+    a = ABILITIES.ABBREVIATIONS_TO_FULL.B(a.replace('Spellcaster, ', ''))
+    b = ABILITIES.ABBREVIATIONS_TO_FULL.B(b.replace('Spellcaster, ', ''))
+    return sortAbilities(a, b)
+  } else return sort(a, b)
 }
 
 /**

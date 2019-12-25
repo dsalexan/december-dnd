@@ -142,7 +142,7 @@ import Filter from '@/components/5etools/filter'
 
 import { characterFilter } from '@/domain/filter'
 
-console.log('CHARACTER FILTER', characterFilter)
+// console.log('CHARACTER FILTER', characterFilter)
 
 export default {
   components: {
