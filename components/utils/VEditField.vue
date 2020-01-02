@@ -7,6 +7,7 @@
       @input="onInput"
       :label="label"
       @keydown="onKeydown"
+      :color="color"
     ></v-text-field>
     <span v-show="!isEditing" @click="onClick">{{ addedValue }}</span>
   </div>
@@ -30,6 +31,10 @@ export default {
     label: {
       type: String,
       default: null
+    },
+    color: {
+      type: String,
+      default: 'amber darken-1'
     }
   },
   data() {

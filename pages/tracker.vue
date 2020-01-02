@@ -1,85 +1,13 @@
 <template>
   <div>
+    <!-- CHARACTER_PERMISSIONS {{ characters_with_permissions }} -->
     <v-list three-line>
-      <v-list-item v-for="item in characters" :key="item.title">
-        <v-list-item-action class="align-self-center d-flex align-center">
-          <v-hover v-slot:default="{ hover }">
-            <v-btn :color="hover ? 'blue' : 'grey'" @click="handleInitiativeRoll(item._id, { add: 1 })" text icon>
-              <v-icon>mdi-chevron-up</v-icon>
-            </v-btn>
-          </v-hover>
-          <v-edit-field
-            :value="item._rolls.initiative"
-            @input="handleInitiativeRoll(item._id, { value: $event })"
-            :add="modifier(item.ability.dex)"
-            class="title font-weight-bold"
-          ></v-edit-field>
-          <v-hover v-slot:default="{ hover }">
-            <v-btn :color="hover ? 'red' : 'grey'" @click="handleInitiativeRoll(item._id, { add: -1 })" text icon>
-              <v-icon>mdi-chevron-down</v-icon>
-            </v-btn>
-          </v-hover>
-        </v-list-item-action>
-
-        <v-list-item-avatar class="align-self-center" style="min-width: 72px; margin-right: 32px;">
-          <v-avatar size="72" color="amber darken-1">
-            <v-img v-if="item.avatar" :src="item.avatar"></v-img>
-            <span v-else class="black--text headline">{{ abreviattion(item) }}</span>
-          </v-avatar>
-        </v-list-item-avatar>
-
-        <v-list-item-content>
-          <v-list-item-title class="title"
-            ><span>{{ item.name }}</span>
-            <div class="caption grey--text text--lighten-1">
-              <span class="font-italic">{{ creature_type(item._id) }} &mdash;</span>
-              <span class="font-italic">{{ background(item._id) ? `${background(item._id)} &mdash;` : '' }}</span>
-              <span v-html="level_or_cr(item._id, true)"></span></div
-          ></v-list-item-title>
-          <v-list-item-subtitle>
-            <div class="abilities d-flex flex-row justify-space-between" style="width: 50%; min-width: 350px;">
-              <div v-for="ability in ['str', 'dex', 'con', 'int', 'wis', 'cha']" :key="ability" class="ability text-center">
-                <div class="name text-uppercase font-weight-bold">
-                  {{ ability }}
-                </div>
-                <div class="score amber--text text--darken-1 font-weight-regular">
-                  {{ item.ability[ability] }} ({{ modifier(item.ability[ability], true) }})
-                </div>
-              </div>
-            </div>
-          </v-list-item-subtitle>
-        </v-list-item-content>
-
-        <v-list-item-action class="align-self-center">
-          <v-tooltip left>
-            <template v-slot:activator="{ on }">
-              <v-hover v-slot:default="{ hover }">
-                <v-btn
-                  :color="hover ? 'amber' : hasRolled(item._id) ? 'grey' : 'white'"
-                  @click="rollInitiative(item._id)"
-                  v-on="on"
-                  text
-                  icon
-                >
-                  <v-icon>mdi-dice-d20-outline</v-icon>
-                </v-btn>
-              </v-hover>
-            </template>
-            <span>Roll Initiative (d20)</span>
-          </v-tooltip>
-
-          <v-tooltip left>
-            <template v-slot:activator="{ on }">
-              <v-hover v-slot:default="{ hover }">
-                <v-btn :color="hover ? 'red' : 'grey'" v-on="on" @click="handleRemove(item._id)" text icon>
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
-              </v-hover>
-            </template>
-            <span>Remove Character</span>
-          </v-tooltip>
-        </v-list-item-action>
-      </v-list-item>
+      <dnd-list-item
+        v-for="item in characters_with_permissions"
+        :key="item._id"
+        :value="item.character"
+        :permission="item.permission"
+      ></dnd-list-item>
     </v-list>
 
     <v-dialog v-model="formDialog" persistent>
@@ -96,11 +24,11 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="searchDialog" persistent>
-      <v-card v-if="searchDialog">
+    <v-dialog v-model="searchDialog">
+      <v-card>
         <v-card-title class="title">Search 5eTools</v-card-title>
         <v-card-text>
-          <tool-filter :filter="filter"></tool-filter>
+          <tool-filter @change="filterChange"></tool-filter>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -110,7 +38,16 @@
       </v-card>
     </v-dialog>
 
-    <v-speed-dial v-model="fab" open-on-hover transition="slide-x-reverse-transition" right fixed bottom direction="left">
+    <v-speed-dial
+      v-if="PERMISSIONS.EDIT"
+      v-model="fab"
+      open-on-hover
+      transition="slide-x-reverse-transition"
+      right
+      fixed
+      bottom
+      direction="left"
+    >
       <template v-slot:activator>
         <v-btn v-model="fab" color="amber darken-2" dark fab right>
           <v-icon v-if="fab">mdi-close</v-icon>
@@ -134,9 +71,11 @@ import _ from 'lodash'
 // eslint-disable-next-line no-unused-vars
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 
-import { modifier } from '@/utils/system'
+// eslint-disable-next-line no-unused-vars
+import { info } from '../utils/debug'
+import listItemVue from '../components/dnd/tracker/listItem.vue'
 
-import VEditField from '@/components/utils/VEditField'
+import { defaults } from '../utils/permissions'
 import FormCharacter from '@/components/forms/character'
 import Filter from '@/components/5etools/filter'
 
@@ -146,13 +85,19 @@ import { characterFilter } from '@/domain/filter'
 
 export default {
   components: {
-    'v-edit-field': VEditField,
     'form-character': FormCharacter,
-    'tool-filter': Filter
+    'tool-filter': Filter,
+    'dnd-list-item': listItemVue
   },
   data() {
     return {
       fab: false,
+      // hp
+      hpDialog: false,
+      hpSum: undefined,
+      hpDialog_id: undefined,
+      hpDialog_plus: false,
+      hpDialog_minus: false,
       // form
       formDialog: false,
       formModel: undefined,
@@ -162,21 +107,32 @@ export default {
     }
   },
   computed: {
+    ...mapState('ui', ['PERMISSIONS']),
+    ...mapState('characters', {
+      CHARACTER_PERMISSIONS: 'permissions'
+    }),
     ...mapGetters('characters', {
       character: 'character',
-      characters: 'sorted',
-      hasRolled: 'hasRolled',
-      initiative: 'initiative',
-      creature_type: 'creature_type',
-      level_or_cr: 'level_or_cr',
-      background: 'background'
-    })
+      characters: 'sorted'
+    }),
+    characters_with_permissions() {
+      return this.characters
+        .map((char) => {
+          const permission = this.CHARACTER_PERMISSIONS[char._id] || defaults('character')
+
+          if (permission.VIEW === false) return undefined
+
+          return {
+            character: char,
+            permission
+          }
+        })
+        .filter((char) => char !== undefined)
+    }
   },
+  created() {},
   methods: {
-    ...mapMutations('characters', ['add', 'remove', 'set_initiative']),
-    handleInitiativeRoll(_id, { value = undefined, add = undefined } = {}) {
-      this.set_initiative({ _id, value, add })
-    },
+    ...mapMutations('characters', ['add', 'remove', 'set_initiative', 'set_hp']),
     handleAddCharacter({ cancel = false, data = {} } = {}) {
       this.formDialog = false
       this.formModel = undefined
@@ -191,37 +147,38 @@ export default {
         })
       }
     },
-    handleRemove(_id) {
-      this.$toast({
-        supportHTML: true,
-        message: `<span class="grey">Removing character:</span> <b>${this.character(_id).name}</b>`,
-        position: 'bottom-center'
-      })
-      this.remove(_id)
-    },
-    rollInitiative(_id) {
-      const value = Math.floor(Math.random() * (20 - 1 + 1)) + 1
-      this.$toast({
-        supportHTML: true,
-        message: `<span class="grey"><i>${this.character(_id).name}</i> &mdash; Rolling initiative:</span> <b>${value}</b>`,
-        position: 'bottom-center'
-      })
-      this.handleInitiativeRoll(_id, {
-        value
-      })
-    },
-
-    modifier,
-    abreviattion(character) {
-      return character.name
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .toUpperCase()
+    max(a, b) {
+      return Math.max(a, b)
     },
     openFilter() {
       this.searchDialog = true
       // this.loadBestiary()
+    },
+    filterChange(entry) {
+      console.log('filter change', entry)
+      this.add(_.cloneDeep(entry))
+    },
+    setHp(_id, sum, key = 'current') {
+      this.hpDialog = false
+      this.hpSum = undefined
+      this.hpDialog_id = undefined
+      this.hpDialog_plus = false
+      this.hpDialog_minus = false
+
+      if (sum === undefined) return
+
+      // console.log('SET HP', _id, sum, key)
+
+      this.set_hp({ _id, value: sum, key })
+    },
+    onKeyUp(e, _id, key = 'current') {
+      const value = this.character(_id)._hp[key]
+
+      const add = e.code === 'ArrowUp' ? +1 : e.code === 'ArrowDown' ? -1 : undefined
+
+      if (add === undefined || value === undefined) return
+
+      this.set_hp({ _id, value: value + add, key })
     }
   }
 }
@@ -245,4 +202,16 @@ export default {
     .name
 
     .score
+</style>
+
+<style lang="sass">
+.hpDialog
+    .v-card__text
+      span
+        margin: 0 10px
+        display: inline-block
+        min-height: 48px
+        padding: 8px
+        font-size: 16px
+        // margin-top: 8px
 </style>

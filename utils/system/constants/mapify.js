@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 export default function mapify(data) {
   return Object.freeze({
     A: (key, fallback = undefined, { lowercase = false } = {}) => {
@@ -9,7 +11,7 @@ export default function mapify(data) {
       if (data[key] !== undefined) return data[key]
       return fallback || key
     },
-    B: (value, { lowercase = false } = {}) => {
+    B: (value, fallback, { lowercase = false } = {}) => {
       if (value === undefined || value === null) throw new TypeError('undefined or null object passed to parser')
       if (typeof value === 'string') {
         value = value.trim()
@@ -17,7 +19,7 @@ export default function mapify(data) {
       }
       for (const key in data) {
         if (!data.hasOwnProperty(key)) continue
-        if (data[key] === value) return key
+        if (data[key] === value || (_.isArray(data[key]) && data[key].includes(value))) return key
       }
       return value
     }

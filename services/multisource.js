@@ -86,11 +86,9 @@ async function _pOnIndexLoad(src2UrlMap, jsonDir, dataProp, addFn, pOptional) {
       )
     ).flat()
 
-    setTimeout(() => {
-      let toAdd = []
-      dataStack.forEach((d) => (toAdd = toAdd.concat(d[dataProp])))
-      addFn(toAdd)
-    }, 0)
+    let toAdd = []
+    dataStack.forEach((d) => (toAdd = toAdd.concat(d[dataProp])))
+    addFn(toAdd)
   }
 
   return loadedSources

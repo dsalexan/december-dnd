@@ -8,7 +8,7 @@
         <v-icon right>mdi-filter</v-icon>
       </v-btn>
 
-      <v-text-field small prepend-inner-icon="mdi-magnify" suffix="1277/1258" solo dark></v-text-field>
+      <v-text-field :suffix="searchSize" @input="doSearch" small prepend-inner-icon="mdi-magnify" solo dark></v-text-field>
 
       <v-btn small>
         <v-icon>mdi-shuffle</v-icon>
@@ -21,23 +21,78 @@
     </div>
     <div class="tags">
       <v-hover v-slot:default="{ hover }" v-for="tag in tags" :key="tag.id">
-        <v-chip :close="hover" :color="tag.color" @click:close="removeTag(tag.id)" label class="ma-1" small>
+        <v-chip :close="hover" :color="tag.color" @click:close="removeTag(tag)" label class="ma-1" x-small>
           {{ tag.text }}
         </v-chip>
       </v-hover>
     </div>
     <v-data-table
-      :headers="headers"
-      :items="values"
-      :multi-sort="true"
-      :hide-default-footer="true"
-      :disable-pagination="true"
+      :headers="head"
+      :items="filteredList"
+      multi-sort
+      hide-default-footer
+      disable-pagination
       dark
       dense
       class="elevation-1"
-    ></v-data-table>
+    >
+      <template v-slot:item="{ item, headers }">
+        <tr @click="selectEntry(item)" style="cursor: pointer;">
+          <td
+            v-for="(header, hi) in headers"
+            :key="hi"
+            :class="{
+              'text-start': header.align === undefined,
+              'text-left': header.align === 'left',
+              'text-right': header.align === 'right',
+              'text-center': header.align === 'center'
+            }"
+          >
+            <template v-if="header.tooltip === undefined">
+              <span
+                v-html="
+                  typeof header.display === 'function'
+                    ? header.display(lodashGet(item, header.value))
+                    : lodashGet(item, header.display)
+                "
+              >
+              </span>
+            </template>
+            <template v-else>
+              <v-tooltip bottom color="grey lighten-3">
+                <template v-slot:activator="{ on }">
+                  <span
+                    v-on="on"
+                    v-html="
+                      typeof header.display === 'function'
+                        ? header.display(lodashGet(item, header.value))
+                        : lodashGet(item, header.display)
+                    "
+                  >
+                  </span>
+                </template>
+                <span
+                  v-html="
+                    typeof header.tooltip === 'function'
+                      ? header.tooltip(lodashGet(item, header.value))
+                      : lodashGet(item, header.tooltip)
+                  "
+                  class="grey--text text--darken-4"
+                >
+                  {{
+                    typeof header.tooltip === 'function'
+                      ? header.tooltip(lodashGet(item, header.value))
+                      : lodashGet(item, header.tooltip)
+                  }}
+                </span>
+              </v-tooltip>
+            </template>
+          </td>
+        </tr>
+      </template>
+    </v-data-table>
 
-    <v-dialog v-model="dialog">
+    <v-dialog v-model="dialog" @click:outside="doFilter()">
       <v-card v-if="dialog" class="filter-dialog-card">
         <v-card-title class="d-flex flex-row justify-space-between">
           <span class="subtitle-1">Filters</span>
@@ -50,7 +105,7 @@
               <v-btn @click="showAll" color="grey darken-2" depressed small>Show All</v-btn>
               <v-btn @click="hideAll" color="grey darken-2" depressed small>Hide All</v-btn>
             </div>
-            <v-btn color="grey darken-2" class="mx-2" depressed small>Reset</v-btn>
+            <v-btn @click="allSelectDefault" color="grey darken-2" class="mx-2" depressed small>Reset</v-btn>
 
             <v-btn color="grey darken-2" class="mx-2" depressed small>
               <v-icon small>mdi-settings</v-icon>
@@ -67,7 +122,7 @@
               <v-expansion-panel-content>
                 <div class="d-flex flex-row justify-end mb-2 align-center">
                   <v-btn
-                    v-if="summary.model.hasMultiple"
+                    v-if="summary.model.hasMultiple && summary.groups.length > 1"
                     @click="summary.toogleMultiple()"
                     :color="summary.multiple ? 'grey darken-4' : 'grey darken-3'"
                     class="mr-4"
@@ -88,20 +143,28 @@
                     >
                   </div>
 
-                  <div v-if="summary.model.hasGenericSelection" class="btn-group ml-5">
+                  <div class="btn-group ml-5">
                     <v-btn
                       @click="summary.includeAll()"
+                      v-if="summary.model.hasGenericSelection"
                       color="grey darken-2"
                       class=" text-uppercase blue--text text--lighten-1"
                       depressed
                       small
                       >All</v-btn
                     >
-                    <v-btn @click="summary.unselectAll()" color="grey darken-2" class=" text-uppercase" depressed small
+                    <v-btn
+                      v-if="summary.model.hasGenericSelection"
+                      @click="summary.unselectAll()"
+                      color="grey darken-2"
+                      class=" text-uppercase"
+                      depressed
+                      small
                       >Clear</v-btn
                     >
                     <v-btn
                       @click="summary.excludeAll()"
+                      v-if="summary.model.hasGenericSelection"
                       color="grey darken-2"
                       class=" text-uppercase red--text text--lighten-1"
                       depressed
@@ -113,7 +176,7 @@
                     >
                   </div>
                 </div>
-                <div v-for="(group, g) in summary.items" :key="g">
+                <div v-for="(group, g) in summary.items" :key="g" class="filter-group">
                   <v-divider class="my-1"></v-divider>
                   <template v-if="summary.model.type === 'tag'">
                     <v-btn
@@ -121,9 +184,9 @@
                       :key="index"
                       @click="item.toogleState()"
                       :color="entryColor(item.state)"
-                      class="ma-1"
+                      class="filter-tag"
                       depressed
-                      small
+                      x-small
                       >{{ summary.displayFn(item) }}</v-btn
                     >
                   </template>
@@ -131,7 +194,8 @@
                     <v-range-slider
                       :min="summary.model.min || 0"
                       :max="summary.model.max || group.length - 1"
-                      :value="summary.value"
+                      v-model="summary.value"
+                      :sort-by="[0]"
                       step="1"
                       ticks="always"
                       tick-size="2"
@@ -155,12 +219,16 @@
 <script>
 // eslint-disable-next-line no-unused-vars
 import _ from 'lodash'
-
-// eslint-disable-next-line no-unused-vars
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
+// eslint-disable-next-line no-unused-vars
+import { listSort, sortCRLevelForItem } from '../../utils/sort'
+
+import { sourceJSONToAbv, sourceJSONToFull } from '../../domain/source'
 
 // eslint-disable-next-line no-unused-vars
 import { STATES, STATES_PROGRESSION } from '@/domain/filter/item'
+
+import '@/assets/sources.sass'
 
 export default {
   name: 'tool-filter',
@@ -178,95 +246,50 @@ export default {
       dialog: false,
       panel: [],
       // RESULT-FORM
-      tags: [
+      head: [
         {
-          id: 'asdas',
-          text: "Player's Handbook",
-          color: 'blue darken-4'
-        },
-        {
-          id: 'asda212',
-          text: "Volo's Guide to Monsters",
-          color: 'blue darken-4'
-        },
-        {
-          id: 'dfsd2',
-          text: "Dungeon Master's Guide",
-          color: 'blue darken-4'
-        },
-        {
-          id: 'asdfe3232',
-          text: 'Monster Manual',
-          color: 'blue darken-4'
-        },
-        {
-          id: 'sadasd212',
-          text: 'Adventure NPC',
-          color: 'red darken-4'
-        }
-      ],
-      headers: [
-        {
+          name: 'name',
           text: 'Name',
           align: 'left',
+          display: 'name',
           value: 'name'
         },
-        { text: 'Type', value: 'type.asText' },
-        { text: 'CR/Level', value: 'cr_level' },
-        { text: 'Source', value: 'source' }
-      ],
-      values: [
-        {
-          name: 'Luke Undell',
-          type: {
-            asText: 'Humanoid (Human)'
-          },
-          cr_level: 5,
-          source: 'FCS'
-        }
+        { name: 'type', text: 'Type', display: 'data.type', value: 'data.type' },
+        { name: 'crLevel', text: 'CR/Level', display: 'data.crLevel.display', value: 'data.crLevel', sort: sortCRLevelForItem },
+        { name: 'source', text: 'Source', display: sourceJSONToAbv, value: 'data.source', tooltip: sourceJSONToFull }
       ]
     }
   },
   computed: {
-    ...mapState('ui/filter/character', ['filters', 'references']),
+    ...mapState('tools/bestiary', {
+      bestiaryList: 'list'
+    }),
+    ...mapState('ui/filter/character', ['filters', 'references', 'list', 'searchedList', 'filteredList']),
+    ...mapState('ui/filter/character', {
+      is: '_'
+    }),
+    ...mapGetters('ui/filter/character', ['tags']),
+    searchSize() {
+      return `${this.filteredList.length}/${this.list.length}`
+    },
     summaries() {
       return Object.values(this.filters)
     }
   },
   mounted() {
-    this.filterInit().then(
-      function() {
-        this.loadBestiary().then(
-          function({ loadedSources, meta, languages }) {
-            this.setReference({ key: 'languages', data: languages })
-            this.setReference({ key: 'meta', data: meta })
-
-            this.filters.source.clear()
-            Object.keys(loadedSources)
-              // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
-              .forEach((fi) => this.filters.source.addItem(fi))
-
-            this.filters.language.clear()
-            Object.keys(languages)
-              // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
-              .forEach((key) => this.filters.language.addItem(key))
-
-            console.log('MOUNTED', this.references)
-          }.bind(this)
-        )
-      }.bind(this)
-    )
+    if (this.is.inited) return
+    this.filterInit()
   },
   methods: {
-    ...mapMutations('ui/filter/character', ['setReference']),
-    ...mapActions('tools', ['loadBestiary']),
+    lodashGet: _.get,
+    ...mapMutations('ui/filter/character', ['setReference', 'setMounted']),
     ...mapActions('ui/filter/character', {
-      filterInit: 'init'
+      filterInit: 'init',
+      doSearch: 'doSearch',
+      doFilter: 'doFilter',
+      allSelectDefault: 'selectDefault',
+      removeTag: 'removeTag'
     }),
-    removeTag(id) {
-      const index = this.tags.findIndex((t) => t.id === id)
-      this.tags.splice(index, 1)
-    },
     // filter-dialog
     // TAG
     entryColor(state) {
@@ -280,6 +303,9 @@ export default {
     },
     hideAll() {
       this.panel = []
+    },
+    selectEntry(entry) {
+      this.$emit('change', this.bestiaryList[entry.index])
     }
   }
 }
@@ -355,6 +381,12 @@ export default {
   .v-btn
     text-transform: initial
     font-weight: 400
+
+.filter-group
+  .filter-tag
+    font-size: 11px
+    letter-spacing: .05em
+    margin: 2px
 </style>
 
 <style lang="sass">
@@ -372,4 +404,13 @@ export default {
     &:last-child
       border-top-right-radius: 4px
       border-bottom-right-radius: 4px
+
+.circle
+  $radius: 8px
+
+  width: $radius
+  height: $radius
+  border-radius: $radius
+  display: inline-block
+  margin-right: 5px
 </style>

@@ -1,12 +1,60 @@
 Initiative Tracker:
   ✔ Layout @done(19-12-22 04:21)
     ✔ Highlight D20 button when there is no roll @done(19-12-22 16:00)
-    ☐ 5etools link to view the character
+    ✔ 5etools link to view the character @done(19-12-28 05:25)
     ✔ Toast when rolling dice @started(19-12-22 16:05) @done(19-12-22 16:53) @lasted(48m18s)
-    ☐ Make mobile (celular) compatible
+    ✔ Make mobile (celular) compatible @done(20-01-02 00:57)
+      ✔ When zoom image, make so a click at the image closes the dialog @done(20-01-02 00:57)
+      ✔ Reestructure mobile layout to 3 rows: Initiative Tracker + AVATAR // Content (tags, name, type...) // Actions + HP @done(20-01-02 00:57)
+    ✔ Make players views @done(20-01-02 06:32)
+      ✔ Hide/show stats @done(20-01-02 06:32)
+      ✔ Hide/show name @done(20-01-02 06:32)
+    ✔ Add reference color @done(19-12-29 01:34)
+    ✔ Add current hitpoints @started(19-12-28 16:22) @done(19-12-28 21:16) @lasted(4h54m40s)
+      ✔ Button to specify math @done(19-12-28 20:51)
+      ✔ Slider because why not @done(19-12-28 20:51)
+      ✔ Editable current and total @done(19-12-28 20:51)
+        ✔ keys up and down on this fields change data @started(19-12-28 20:52) @done(19-12-28 21:16) @lasted(24m36s)
+      ✔ Way to to subtract and add without math @started(20-01-01 23:33) @done(20-01-02 00:13) @lasted(40m37s)
+    ✔ Add temporary hp @done(19-12-29 01:09)
+    ✔ Add zoom on avatar @done(19-12-29 02:25)
+    ✔ Add Death saving throw @done(19-12-29 01:09)
+    ✔ Add tags for other information @done(20-01-01 23:33)
+      ✔ THIS TAGS SHOULD BE EDITABLE @done(19-12-30 04:45)
+      ✔ TAGS SHOULD HAVE A DEFAULT ALTERNATIVE TEMPLATE TO EDIT THE SHITS @done(19-12-30 05:38)
+      ✔ ADD NEW DATA NO TAGS @done(20-01-01 16:40)
+        ✔ Add selections to pre-defined strings and values @done(20-01-01 23:32)
+        ✔ Remove tags @started(20-01-01 18:56) @done(20-01-01 19:19) @lasted(23m32s)
+        ☐ Add this improvements to AC
+      ✔ Add speed @done(19-12-30 02:22)
+      ✔ Add AC @done(19-12-29 22:38)
+      ✔ Add conditions tracker @started(19-12-29 03:17) @done(19-12-31 20:44) @lasted(2d17h27m1s)
+      ✔ Add senses @started(19-12-30 05:57) @done(19-12-30 06:16) @lasted(19m32s)
+        ✔ Passive Perception based on skills @done(19-12-30 12:17)
+          ✔ Adicionar template de edicao (provavelmente alteraria a proficiencia em Perception) @done(19-12-30 15:48)
+          ✔ BUGFIX: Ao rodar iniciativa em alguem com a tag de passive perception aberta, da erro @done(19-12-30 15:18)
+      ✔ Add languages @done(19-12-30 06:23)
+      ✔ Add passive/active skills @started(19-12-30 02:29) @done(19-12-30 04:30) @lasted(2h1m11s)
+      Senses, skills, saves, etc..:
+        ✔ Try to detect format: name, value, condition from template: <name> <value><unit> <condition> @done(19-12-30 16:50)
+      ✔ Add damage resistances @done(19-12-30 17:48)
+      ✔ Add damage vulnerabilities @done(19-12-30 17:48)
+      ✔ Add damage immunities @done(19-12-30 17:48)
+      ✔ Add condition immunities @started(19-12-30 17:49) @done(19-12-31 16:53) @lasted(23h4m53s)
+      ✔ Add saving throws @started(19-12-30 04:30) @done(19-12-30 05:56) @lasted(1h26m34s)
     ☐ DragNDrop to change initiative
   ✔ Sync with state store (vuex) @done(19-12-22 19:08)
-  ☐ Sync store with data from 5etools
-    ☐ Probably write filter code to me able to search data/
+  ✔ Sync store with data from 5etools @done(19-12-28 05:25)
+    ✔ Probably write filter code to me able to search data/ @done(19-12-28 05:25)
+    ✔ Sync image too @started(19-12-28 05:28) @done(19-12-28 06:55) @lasted(1h27m41s)
+    ✔ Show source @done(19-12-28 07:00)
   ☐ Implement history os changes and undo/redo
   ☐ Persist state
+  ☐ implement something to change between average, minimum and maximum hp at tracker
+  ☐ Make like a "server thing"
+  ☐ Make some tags (like "condition") always visible or default visible
+  ☐ Determinate default permissions related to new characters based on a universal access level from browser storate or query string
+Future:
+  ☐ Actions and reactions tracking
+  ☐ Spells tracking
+  ☐ Spell slot tracking

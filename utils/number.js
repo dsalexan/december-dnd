@@ -1,5 +1,7 @@
+import { isValid } from './value'
+
 export function toText(number) {
-  if (number == null) throw new TypeError(`undefined or null object passed to parser`)
+  if (!isValid(number)) throw new TypeError(`undefined or null object passed to parser`)
   if (Math.abs(number) >= 100) return `${number}`
 
   function getAsText(num) {
@@ -70,6 +72,17 @@ export function toText(number) {
   return `${number < 0 ? 'negative ' : ''}${getAsText(number)}`
 }
 
+export function toOrdinal(number) {
+  if (!isValid(number)) throw new TypeError(`undefined or null object passed to parser`)
+
+  let suffix = 'th'
+  if (number === 1) suffix = 'st'
+  else if (number === 2) suffix = 'nd'
+  else if (number === 2) suffix = 'rd'
+
+  return `${number}${suffix}`
+}
+
 export function toVulgar(number) {
   const spl = `${number}`.split('.')
   if (spl.length === 1) return number
@@ -94,8 +107,65 @@ export function toFractional(number) {
   return denominator === 1 ? String(numerator) : `${Math.floor(numerator)}/${Math.floor(denominator)}`
 }
 
+export function parseNumberRange(input, min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER) {
+  function errInvalid(input) {
+    throw new Error(`Could not parse range input "${input}"`)
+  }
+
+  function errOutOfRange() {
+    throw new Error(`Number was out of range! Range was ${min}-${max} (inclusive).`)
+  }
+
+  function isOutOfRange(num) {
+    return num < min || num > max
+  }
+
+  function addToRangeVal(range, num) {
+    range.add(num)
+  }
+
+  function addToRangeLoHi(range, lo, hi) {
+    for (let i = lo; i <= hi; ++i) range.add(i)
+  }
+
+  while (true) {
+    if (input && input.trim()) {
+      const clean = input.replace(/\s*/g, '')
+      if (/^((\d+-\d+|\d+),)*(\d+-\d+|\d+)$/.exec(clean)) {
+        const parts = clean.split(',')
+        const out = new Set()
+
+        for (const part of parts) {
+          if (part.includes('-')) {
+            const spl = part.split('-')
+            const numLo = Number(spl[0])
+            const numHi = Number(spl[1])
+
+            if (isNaN(numLo) || isNaN(numHi) || numLo === 0 || numHi === 0 || numLo > numHi) errInvalid()
+
+            if (isOutOfRange(numLo) || isOutOfRange(numHi)) errOutOfRange()
+
+            if (numLo === numHi) addToRangeVal(out, numLo)
+            else addToRangeLoHi(out, numLo, numHi)
+          } else {
+            const num = Number(part)
+            if (isNaN(num) || num === 0) errInvalid()
+            else {
+              if (isOutOfRange(num)) errOutOfRange()
+              addToRangeVal(out, num)
+            }
+          }
+        }
+
+        return out
+      } else errInvalid()
+    } else return null
+  }
+}
+
 export default {
   toText,
   toVulgar,
-  toFractional
+  toFractional,
+  parseNumberRange
 }

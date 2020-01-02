@@ -56,6 +56,9 @@ const level_composition = {
   id: '/level-composition',
   anyOf: [
     {
+      type: ['integer', 'string']
+    },
+    {
       $ref: '/level'
     },
     {

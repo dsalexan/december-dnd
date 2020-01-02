@@ -3,7 +3,7 @@ import * as Character from '@/domain/character'
 const base = [
   {
     name: 'Luke Undell',
-    source: 'Fendas',
+    source: 'FCS',
     type: {
       type: 'Humanoid',
       tags: ['Human', 'Variant Human']
@@ -25,18 +25,26 @@ const base = [
         },
         subclass: {
           name: 'The Way of the Zoroaster',
-          source: 'Fendas'
+          source: 'FCS'
         }
       }
     ],
-    avatar: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-    ability: {
-      str: 10,
-      dex: 14,
-      con: 10,
-      int: 10,
-      wis: 10,
-      cha: 10
+    str: 10,
+    dex: 14,
+    con: 10,
+    int: 10,
+    wis: 10,
+    cha: 10,
+    _fluff: {
+      images: [
+        {
+          type: 'image',
+          href: {
+            type: 'external',
+            path: 'https://cdn.vuetifyjs.com/images/lists/1.jpg'
+          }
+        }
+      ]
     },
     _rolls: {
       initiative: 10
@@ -44,7 +52,7 @@ const base = [
   },
   {
     name: 'Avir Yvrani',
-    source: 'Fendas',
+    source: 'FCS',
     type: {
       type: 'Humanoid',
       tags: ['Human', 'Variant Human']
@@ -58,28 +66,95 @@ const base = [
         },
         subclass: {
           name: 'The Way of the Zoroaster',
-          source: 'Fendas'
+          source: 'FCS'
         }
       }
     ],
+    ac: [
+      {
+        ac: 19,
+        from: ['Unarmored Defense']
+      },
+      {
+        ac: 20,
+        from: ['Unarmored Defense', 'Breathing Techiniques']
+      }
+    ],
+    speed: {
+      walk: 60,
+      fly: {
+        number: 90,
+        condition: '(Legacy of the Stars)'
+      },
+      canHover: true
+    },
     // avatar: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-    ability: {
-      str: 10,
-      dex: 20,
-      con: 10,
-      int: 10,
-      wis: 10,
-      cha: 10
-    }
+    str: 10,
+    dex: 20,
+    con: 10,
+    int: 10,
+    wis: 18,
+    cha: 10,
+    save: {
+      dex: true,
+      con: '+16',
+      wis: '+12'
+    },
+    skill: {
+      athletics: true,
+      acrobatics: {
+        proficiency_ratio: 2
+      },
+      deception: '+6',
+      insight: '+5',
+      intimidation: '+6'
+    },
+    senses: ["darkvision 120 ft. (see devil's sight below)"],
+    languages: ['Common', 'Infernal'],
+    vulnerable: [
+      {
+        vulnerable: ['piercing'],
+        note: 'from magic weapons wielded by good creatures'
+      }
+    ],
+    resist: [
+      'fire',
+      'poison',
+      {
+        resist: ['bludgeoning', 'piercing', 'slashing'],
+        note: 'from nonmagical attacks'
+      }
+    ],
+    immune: [
+      'cold',
+      'poison',
+      {
+        immune: ['bludgeoning', 'piercing', 'slashing'],
+        note: 'from nonmagical attacks'
+      }
+    ],
+    conditionImmune: ['frightened'],
+    _conditions: [
+      'disease',
+      'prone',
+      {
+        name: 'exhaustion',
+        value: 2
+      },
+      {
+        name: 'blinded',
+        condition: 'when his eyes are closed'
+      }
+    ]
   }
 ]
 
 export const characters = base.map((c) => Character.make(c))
 
 export const characters_index = characters.reduce(
-  (obj, cur) => ({
+  (obj, cur, index) => ({
     ...obj,
-    [cur._id]: cur
+    [cur._id]: index
   }),
   {}
 )

@@ -1,8 +1,13 @@
+import _ from 'lodash'
+
 import { NUMBER_CLEAN_REGEXP } from './regex'
 
 import { toNumber as crToNumber } from './system/cr'
 import { LIST_ABILITIES } from './system/constants/abilities'
 import { ABILITIES } from './system/constants'
+// eslint-disable-next-line no-unused-vars
+import { info } from './debug'
+import { creatureLevel } from '~/domain/character'
 
 // HELPERS
 /**
@@ -77,7 +82,7 @@ export function sortProp(prop, a, b, { order = 'ASC', lowercase = false, upperca
  * @returns {Integer} Order
  */
 export function sortValue(key, a, b, { order = 'ASC', lowercase = false, uppercase = false } = {}) {
-  return sort(a.values[key], b.values[key], { order, lowercase, uppercase })
+  return sort(_.get(a.data, key), _.get(b.data, key), { order, lowercase, uppercase })
 }
 
 /**
@@ -136,7 +141,7 @@ export function compareListNames(a, b) {
 export function listSort(a, b, { sortBy, order = 'ASC', lowercase = false, uppercase = false } = {}) {
   if (sortBy === 'name') return sortProp('name', a, b, { lowercase: true })
   // compareListNames
-  else return sortValue(sortBy, a, b, { lowercase: true }) || sortProp('name', a, b, { lowercase: true })
+  else return sortValue(sortBy, a, b, { lowercase: true, order }) || sortProp('name', a, b, { lowercase: true, order })
 }
 
 /**
@@ -156,14 +161,45 @@ export function indexSort(a, b, list) {
  * @param {Object} b Object has a cr property
  * @returns {Integer} Order
  */
-export function sortCR(a, b) {
-  if (a !== undefined && a !== null) a = a.data || a
-  if (b !== undefined && b !== null) b = b.data || b
+export function sortCR(_a, _b) {
+  let a, b
+  if (a !== undefined && a !== null) a = _a.data || _a
+  if (b !== undefined && b !== null) b = _b.data || _b
 
   // always put unknown values last
   if (a === 'Unknown' || a === undefined) a = '999'
   if (b === 'Unknown' || b === undefined) b = '999'
   return sort(crToNumber(a), crToNumber(b))
+}
+
+export function sortLevel(_a, _b) {
+  let a, b
+  if (a !== undefined && a !== null) a = _a.data || _a
+  if (b !== undefined && b !== null) b = _b.data || _b
+
+  const levelA = _.isObjectLike(a) ? creatureLevel(a) : parseInt(a)
+  const levelB = _.isObjectLike(b) ? creatureLevel(b) : parseInt(b)
+
+  return sort(levelA, levelB)
+}
+
+export function sortCRLevelForItem(_a, _b) {
+  const a = _a.data || _a
+  const b = _b.data || _b
+
+  // info('sortCRLevelForItem', a, b)
+
+  if (a.level !== undefined) {
+    if (b.level !== undefined) {
+      return sort(a.value, b.value)
+    } else {
+      return -1
+    }
+  } else if (b.level !== undefined) {
+    return 1
+  } else {
+    return sort(a.value, b.value)
+  }
 }
 
 /**

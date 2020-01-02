@@ -1,6 +1,8 @@
 // parser modules are converted from 5etools
 import _ from 'lodash'
 import { ABBREVIATION_TO_FULL, SINGULAR_TO_PLURAL } from '@/utils/system/constants'
+import { toOrdinal } from '~/utils/number'
+import '@/utils/string'
 
 /**
  * @typedef {Object} CreatureType
@@ -20,7 +22,7 @@ export function CreatureTypeText(type) {
   if (typeof type === 'string') {
     // handles e.g. "fey"
     out.type = type
-    out.asText = type
+    out.asText = type.uppercaseFirst()
     return out
   }
 
@@ -30,11 +32,11 @@ export function CreatureTypeText(type) {
       if (typeof tag === 'string') {
         // handles e.g. "fiend (devil)"
         out.tags.push(tag)
-        tempTags.push(tag)
+        tempTags.push(tag.uppercaseFirst())
       } else {
         // handles e.g. "humanoid (Chondathan human)"
         out.tags.push(tag.tag)
-        tempTags.push(`${tag.prefix} ${tag.tag}`)
+        tempTags.push(`${tag.prefix.uppercaseFirst()} ${tag.tag.uppercaseFirst()}`)
       }
     }
   }
@@ -45,7 +47,7 @@ export function CreatureTypeText(type) {
       type.type
     )}`
   } else {
-    out.asText = `${type.type}`
+    out.asText = `${type.type.uppercaseFirst()}`
   }
   if (tempTags.length) out.asText += ` (${tempTags.join(', ')})`
   return out
@@ -61,7 +63,12 @@ export function CreatureLevelText(level) {
     level = [level]
   }
 
-  return level.map((l) => `<b>${l.level}</b> <i>${l.class.name}${l.subclass ? ` (${l.subclass.name})` : ''}</i>`).join(', ')
+  return level
+    .map((l) => {
+      if (_.isObjectLike(l)) return `${toOrdinal(l.level)} level ${l.class.name}${l.subclass ? ` (${l.subclass.name})` : ''}`
+      return `${toOrdinal(l)} level`
+    })
+    .join(', ')
 }
 
 export function CreatureCRText(cr) {

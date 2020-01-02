@@ -5,6 +5,12 @@ export function encodeForHash(toEncode) {
   else return `${toEncode}`.toUrlified()
 }
 
+export function hashData(data, curPage) {
+  const encoder = HASH_BUILDER[curPage]
+  if (!encoder) throw new Error(`No encoder found for page ${curPage}`)
+  return encoder(data)
+}
+
 export const HASH_BUILDER = {
   [PAGES.BESTIARY]: (it) => encodeForHash([it.name, it.source]),
   [PAGES.SPELLS]: (it) => encodeForHash([it.name, it.source]),
@@ -27,4 +33,10 @@ export const HASH_BUILDER = {
   [PAGES.TABLES]: (it) => encodeForHash([it.name, it.source]),
   [PAGES.VEHICLES]: (it) => encodeForHash([it.name, it.source]),
   [PAGES.ACTIONS]: (it) => encodeForHash([it.name, it.source])
+}
+
+export default {
+  HASH_BUILDER,
+  encodeForHash,
+  hashData
 }

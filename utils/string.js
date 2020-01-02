@@ -202,6 +202,13 @@ String.prototype.toUrlified =
     return encodeURIComponent(this).toLowerCase()
   }
 
+String.prototype.clearParenthesis =
+  String.prototype.clearParenthesis ||
+  function() {
+    if (this[0] === '(' && this[this.length - 1] === ')') return this.substr(1, this.length - 2)
+    return this
+  }
+
 Array.prototype.joinConjunct =
   Array.prototype.joinConjunct ||
   function(joiner, lastJoiner, nonOxford) {
@@ -218,3 +225,110 @@ Array.prototype.joinConjunct =
       return outStr
     }
   }
+
+Array.prototype.last =
+  Array.prototype.last ||
+  function(arg) {
+    if (arg !== undefined) this[this.length - 1] = arg
+    else return this[this.length - 1]
+  }
+
+Array.prototype.filterIndex =
+  Array.prototype.filterIndex ||
+  function(fnCheck) {
+    const out = []
+    this.forEach((it, i) => {
+      if (fnCheck(it)) out.push(i)
+    })
+    return out
+  }
+
+Array.prototype.equals =
+  Array.prototype.equals ||
+  function(array2) {
+    const array1 = this
+    if (!array1 && !array2) return true
+    else if ((!array1 && array2) || (array1 && !array2)) return false
+
+    const temp = []
+    if (!array1[0] || !array2[0]) return false
+    if (array1.length !== array2.length) return false
+    let key
+    // Put all the elements from array1 into a "tagged" array
+    for (let i = 0; i < array1.length; i++) {
+      key = `${typeof array1[i]}~${array1[i]}` // Use "typeof" so a number 1 isn't equal to a string "1".
+      if (temp[key]) temp[key]++
+      else temp[key] = 1
+    }
+    // Go through array2 - if same tag missing in "tagged" array, not equal
+    for (let i = 0; i < array2.length; i++) {
+      key = `${typeof array2[i]}~${array2[i]}`
+      if (temp[key]) {
+        if (temp[key] === 0) return false
+        else temp[key]--
+      } else return false
+    }
+    return true
+  }
+
+Array.prototype.partition =
+  Array.prototype.partition ||
+  function(fnIsValid) {
+    return this.reduce(([pass, fail], elem) => (fnIsValid(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]]), [[], []])
+  }
+
+Array.prototype.getNext =
+  Array.prototype.getNext ||
+  function(curVal) {
+    let ix = this.indexOf(curVal)
+    if (!~ix) throw new Error('Value was not in array!')
+    if (++ix >= this.length) ix = 0
+    return this[ix]
+  }
+
+Array.prototype.shuffle =
+  Array.prototype.shuffle ||
+  function() {
+    for (let i = 0; i < 10000; ++i) this.sort(() => Math.random() - 0.5)
+    return this
+  }
+
+export const COMMAS_NOT_IN_PARENTHESES_REGEX = /,\s?(?![^(]*\))/g
+export const COMMA_SPACE_NOT_IN_PARENTHESES_REGEX = /, (?![^(]*\))/g
+
+export function uppercaseFirst(string) {
+  return string.uppercaseFirst()
+}
+
+export function padNumber(n, len, padder) {
+  return String(n).padStart(len, padder)
+}
+
+export function elipsisTruncate(str, atLeastPre = 5, atLeastSuff = 0, maxLen = 20) {
+  if (maxLen >= str.length) return str
+
+  maxLen = Math.max(atLeastPre + atLeastSuff + 3, maxLen)
+  let out = ''
+  let remain = maxLen - (3 + atLeastPre + atLeastSuff)
+  for (let i = 0; i < str.length - atLeastSuff; ++i) {
+    const c = str[i]
+    if (i < atLeastPre) out += c
+    else if (remain-- > 0) out += c
+  }
+  if (remain < 0) out += '...'
+  out += str.substring(str.length - atLeastSuff, str.length)
+  return out
+}
+
+export function getArticle(str) {
+  return /^[aeiou]/.test(str) ? 'an' : 'a'
+}
+
+export default {
+  uppercaseFirst,
+  padNumber,
+  elipsisTruncate,
+  getArticle,
+  COMMAS_NOT_IN_PARENTHESES_REGEX,
+  COMMA_SPACE_NOT_IN_PARENTHESES_REGEX
+}

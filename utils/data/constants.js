@@ -1,4 +1,5 @@
 export const BASE_URL = '/'
+export const LIVE_5E_TOOLS_URL = 'https://5e.tools/'
 
 export const TOOLS_DATA_DIRECTORY = 'data'
 
@@ -34,4 +35,11 @@ export const PAGES = {
   VEHICLES: 'vehicles.html',
   CHARACTERS: 'characters.html',
   ACTIONS: 'actions.html'
+}
+
+export default {
+  BASE_URL,
+  TOOLS_DATA_DIRECTORY,
+  FLUFF_INDEX,
+  PAGES
 }

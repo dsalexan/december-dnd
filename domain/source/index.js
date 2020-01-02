@@ -97,7 +97,35 @@ export function sourceJSONToAbv(_source) {
 
 export function sourceJSONToColor(source) {
   return `source${sourceJSONToAbv(source)}`
+
+  // BrewUtil._buildSourceCache()
+  // if (BrewUtil._sourceCache[source] && BrewUtil._sourceCache[source].color) {
+  //   const validColor = BrewUtil.getValidColor(BrewUtil._sourceCache[source].color)
+  //   if (validColor.length) return validColor
+  //   return ''
+  // } else return ''
 }
+
+// export function _buildSourceCache() {
+//   function doBuild() {
+//     if (BrewUtil.homebrewMeta && BrewUtil.homebrewMeta.sources) {
+//       BrewUtil.homebrewMeta.sources.forEach((src) => (BrewUtil._sourceCache[src.json] = { ...src }))
+//     }
+//   }
+
+//   if (!BrewUtil._sourceCache) {
+//     BrewUtil._sourceCache = {}
+
+//     if (!BrewUtil.homebrewMeta) {
+//       const temp = StorageUtil.syncGet(HOMEBREW_META_STORAGE) || {}
+//       temp.sources = temp.sources || []
+//       BrewUtil.homebrewMeta = temp
+//       doBuild()
+//     } else {
+//       doBuild()
+//     }
+//   }
+// }
 
 export default {
   hasBeenReprinted,

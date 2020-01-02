@@ -4,18 +4,18 @@ const cr = {
   id: '/cr',
   anyOf: [
     {
-      type: 'integer'
+      type: ['integer', 'string']
     },
     {
       type: 'object',
       properties: {
         cr: {
-          type: 'integer',
+          type: ['integer', 'string'],
           required: true
         }
       },
       additionalProperties: {
-        type: 'integer'
+        type: ['integer', 'string']
       }
     }
   ]

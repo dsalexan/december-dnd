@@ -14,6 +14,8 @@ import damage from './damage'
 import senses from './senses'
 import character from './character'
 import spellcasting from './spellcasting'
+import attack from './attack'
+import units from './units'
 
 export const ABBREVIATION_TO_FULL = abbreviations
 export const SINGULAR_TO_PLURAL = singulars
@@ -30,6 +32,9 @@ export const SENSES = senses
 export const CHARACTER = character
 export const SPELLCASTING = spellcasting
 
+export const ATTACK = attack
+export const UNITS = units
+
 export default {
   ABILITIES,
   CR,
@@ -41,5 +46,8 @@ export default {
   DAMAGE,
   SENSES,
   CHARACTER,
-  SPELLCASTING
+  SPELLCASTING,
+
+  ATTACK,
+  UNITS
 }
