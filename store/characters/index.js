@@ -8,26 +8,44 @@ import Character from '@/domain/character'
 // eslint-disable-next-line no-unused-vars
 import CharacterMock from '@/domain/character/mock'
 import Rolls from '@/utils/rolls'
-import { info } from '~/utils/debug'
-import { int } from '~/utils/value'
+// eslint-disable-next-line no-unused-vars
+import { info, error } from '~/utils/debug'
+import { int, isValid } from '~/utils/value'
 import { defaults } from '~/utils/permissions'
 
-info('CHARACTER MOCK', CharacterMock.characters_index)
+// eslint-disable-next-line no-unused-vars
+const log = info.extend('characters')
 
-info(
-  'PERMISSIONS',
-  Object.keys(CharacterMock.characters_index).reduce((obj, cur) => ({ ...obj, [cur]: defaults('character') }), {})
-)
 export const state = () => ({
-  index: CharacterMock.characters_index,
-  list: CharacterMock.characters,
-  permissions: Object.keys(CharacterMock.characters_index).reduce(
-    (obj, cur, index) => ({ ...obj, [cur]: defaults(`character${index === 1 ? ':personal' : ':party'}`) }),
-    {}
-  )
+  index: {},
+  trackers: {}
 })
 
 export const getters = {
+  list(state) {
+    return Object.values(state.index)
+  },
+  permissions(state, getters, rootState) {
+    function getDefault(scope, string) {
+      return (rootState.me.permissions.defaults || {})[scope] || string
+    }
+
+    if (rootState.me === undefined) {
+      return getters.list.reduce((obj, cur) => ({ ...obj, [cur._id]: defaults('character:hidden') }), {})
+    }
+
+    const user_permissions = rootState.me.permissions.__CHARACTER__
+
+    const p = getters.list.reduce((obj, char) => {
+      return {
+        ...obj,
+        [char._id]: isValid(user_permissions[char._id])
+          ? user_permissions[char._id]
+          : defaults(getDefault('__CHARACTER__', 'character:hidden'))
+      }
+    }, {})
+    return p
+  },
   // values
   character(state, getters) {
     return (_id) => state.index[_id] || {}
@@ -38,7 +56,7 @@ export const getters = {
     }
   },
   creature_type(state) {
-    return (_id) => state.index[_id]._pTypes.asText
+    return (_id) => state.index[_id].__pTypes.asText
   },
   level_or_cr(state) {
     return (_id) => {
@@ -73,7 +91,7 @@ export const getters = {
   },
   // manipulations
   sorted(state, getters) {
-    return state.list.sort((a, b) => {
+    return getters.list.sort((a, b) => {
       const initiative = Character.initiative(b) - Character.initiative(a)
       if (initiative === 0) {
         return modifier(b.dex) - modifier(a.dex)
@@ -89,20 +107,6 @@ export const getters = {
 }
 
 export const mutations = {
-  // characters
-  add(state, data) {
-    const character = Character.make(data)
-    const index = state.list.length
-    Vue.set(state.list, index, character)
-    Vue.set(state.index, character._id, index)
-  },
-  remove(state, _id) {
-    const index = state.index[_id]
-    Vue.delete(state.index, _id)
-
-    state.list.splice(index, 1)
-    state.list.forEach((item, i) => Vue.set(state.index, item._id, i))
-  },
   // initiative
   set_initiative(state, { _id, value, add } = {}) {
     if (value !== undefined) {
@@ -126,4 +130,115 @@ export const mutations = {
   }
 }
 
-export const actions = {}
+export const actions = {
+  async init({ state, dispatch }) {
+    dispatch('subscribe')
+    const { data } = await this.$axios.$get(`/characters`)
+    // const { dataTrackers } = await this.$axios.$get(`/trackers`)
+
+    state.index = data.reduce((obj, cur) => ({ ...obj, [cur._id]: Character.make(cur) }), {})
+    // state.trackers = dataTrackers.reduce((obj, cur) => ({ ...obj, [cur._id]: cur }), {})
+  },
+  subscribe({ state, commit, dispatch, rootState }) {
+    dispatch(
+      'pusher/bind',
+      {
+        event: 'character:added',
+        callback: ({ hash, from, data, path }) => {
+          dispatch('add', { data: data.character, notify: false })
+        }
+      },
+      { root: true }
+    )
+
+    dispatch(
+      'pusher/bind',
+      {
+        event: 'character:updated',
+        callback: ({ hash, from, data, path }) => {
+          dispatch('update', { data: data.character, notify: false })
+        }
+      },
+      { root: true }
+    )
+
+    dispatch(
+      'pusher/bind',
+      {
+        event: 'character:removed',
+        callback: ({ hash, from, data, path }) => {
+          dispatch('remove', { id: data.character, notify: false })
+        }
+      },
+      { root: true }
+    )
+
+    log('Subscribed to notifications channel at pusher (december)')
+  },
+  // DOMAIN LOGIC?
+  add({ state, dispatch }, { data, notify = true }) {
+    const character = Character.make(data)
+    Vue.set(state.index, character._id, character)
+
+    log(`Adding character <${character._id}> to tracker`, character)
+
+    if (notify) dispatch('notifyCharacterAdd', character._id)
+  },
+  update({ state, dispatch }, { id, data, notify = true }) {
+    if (!isValid(id)) id = data._id
+
+    if (!isValid(id)) error(`Character id must be informed in update process`, id, data)
+
+    const character = Character.make(data, id)
+    Vue.set(state.index, id, character)
+
+    log(`Updating character <${id}> at tracker`, character)
+
+    if (notify) dispatch('notifyCharacterUpdate', character._id)
+  },
+  updateImage({ state, dispatch }, { id, index, data, notify = true }) {
+    if (!isValid(id)) error(`Character id must be informed in update image crop information process`, id, data)
+
+    Vue.set(state.index[id]._fluff.images, index, data)
+
+    log(`Updating character <${id}> image[${index}]`, data)
+
+    if (notify) dispatch('notifyCharacterUpdate', id)
+  },
+  remove({ state, dispatch }, { id, notify = true }) {
+    const character = _.cloneDeep(state.index[id])
+    Vue.delete(state.index, id)
+
+    log(`Removing character <${id}> at tracker`, character)
+
+    if (notify) dispatch('notifyCharacterRemove', character._id)
+  },
+  // API SHIT
+
+  // NOTIFY SERVER
+  async notifyCharacterAdd({ state, dispatch }, _id) {
+    const response = await this.$axios.$post(`/characters`, {
+      character: state.index[_id]
+    })
+
+    dispatch('pusher/handleResponse', response, { root: true })
+
+    log(`Notifing server that character <${_id}> has been ADDED`, response)
+  },
+  async notifyCharacterUpdate({ state, dispatch }, _id) {
+    const response = await this.$axios.$put(`/characters/${_id}`, {
+      character: state.index[_id]
+    })
+
+    dispatch('pusher/handleResponse', response, { root: true })
+
+    log(`Notifing server that character <${_id}> has been UPDATED`, response)
+  },
+  async notifyCharacterRemove({ state, dispatch }, _id) {
+    const response = await this.$axios.$delete(`/characters/${_id}`)
+
+    dispatch('pusher/handleResponse', response, { root: true })
+
+    log(`Notifing server that character <${_id}> has been REMOVED`, response)
+  }
+}

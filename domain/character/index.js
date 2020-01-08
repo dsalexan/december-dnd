@@ -11,6 +11,8 @@ import CR from '~/utils/system/cr'
 import { isValid, int, sum } from '~/utils/value'
 import { render, stringToValueObject } from '~/services/renderer'
 import { levelToPb } from '~/utils/system/level'
+import alignment from '~/utils/system/alignment'
+import { SIZES } from '~/utils/system/constants'
 
 /**
  * @typedef {Object} Character
@@ -157,6 +159,20 @@ export function sortCharacters(_a, _b, { sortBy }) {
   }
 }
 
+export function sizeToArray(size) {
+  const sizes = [size || []].flat(1)
+
+  return sizes.map((s, index) => ({
+    key: index,
+    source: s,
+    value: s.size || s,
+    tooltip: s.condition,
+    display: {
+      value: SIZES.ABBREVIATION_TO_FULL.A(s.size || s)
+    }
+  }))
+}
+
 export function speedToArray(it_speed) {
   // look to getSpeedString
   if (!isValid(it_speed) || Object.keys(it_speed).length === 0) return []
@@ -221,12 +237,12 @@ export function speedToArray(it_speed) {
 
 export function acToArray(ac) {
   // look to acToFull in 5eTools
-  if (typeof ac === 'string') return ac // handle classic format
+  if (typeof ac === 'string' || typeof ac === 'number') return ac // handle classic format
 
   return ac.map((cur) => {
     return {
-      value: cur.ac,
-      tooltip: cur.from.map((it) => render(it)),
+      value: _.get(cur, 'ac', cur),
+      tooltip: (cur.from || []).map((it) => render(it)),
       source: cur
       // TODO: How to deal with condition here?
     }
@@ -387,7 +403,7 @@ export function sensesToArray(mon) {
       template: [
         true,
         {
-          proficiency_ratio: 1.1,
+          ratio: 1.1,
           bonus: 1
         }
       ]
@@ -405,6 +421,7 @@ export function languagesToArray(languages) {
   }))
   // return languages ? languages.join(', ') : '\u2014'
 }
+
 export function immunitiesAndResistancesToArray(toParse = []) {
   // look to monImmResToFull
   const outerLen = toParse.length
@@ -544,8 +561,25 @@ export function conditionsToArray(conditions = [], isPlainText) {
     .sort((a, b) => sort(a.value, b.value))
 }
 
+export function spellcastingToArray(spellcasting, character) {
+  return [
+    {
+      label: 'Ability',
+      value: spellcasting.ability
+    },
+    {
+      label: 'Attack Bonus',
+      value: proficiency_modifier(true, creatureProficiencyBonus(character), character[spellcasting.ability], true)
+    },
+    {
+      label: 'DC',
+      value: 8 + proficiency_modifier(true, creatureProficiencyBonus(character), character[spellcasting.ability])
+    }
+  ]
+}
+
 // factory
-export function make(char) {
+export function make(char, _id) {
   // NAME
   if (char.name === undefined) {
     throw new Error('Undefined name')
@@ -569,7 +603,7 @@ export function make(char) {
     }
   }
 
-  char._pTypes = char._pTypes || CreatureTypeText(char.type)
+  char.__pTypes = char.__pTypes || CreatureTypeText(char.type)
 
   // LEVEL / CR
   const hasLevel = char.level !== undefined && char.level !== null
@@ -577,7 +611,7 @@ export function make(char) {
 
   if (!hasLevel && !hasCR) {
     // throw new Error('Character doesnt have CR or Level')
-    char._fCrLevel = {
+    char.__fCrLevel = {
       value: undefined,
       display: '\u2014'
     }
@@ -609,10 +643,10 @@ export function make(char) {
         throw cr_validation.errors[0]
       }
 
-      char._pCr = char._pCr || (char.cr == null ? null : char.cr.cr || char.cr)
+      char.__pCr = char.__pCr || (char.cr == null ? null : char.cr.cr || char.cr)
     }
 
-    char._fCrLevel = creatureLevelCR(char)
+    char.__fCrLevel = creatureLevelCR(char)
   }
 
   // ABILITY SCORE
@@ -630,55 +664,66 @@ export function make(char) {
   // SPEED
   if (char.speed === undefined) char.speed = {}
 
-  char._fSpeedType = Object.keys(char.speed).filter((k) => char.speed[k])
-  if (char._fSpeedType.length)
-    char._fSpeed = char._fSpeedType.map((k) => char.speed[k].number || char.speed[k]).sort((a, b) => sort(a, b))[0]
+  char.__fSpeedType = Object.keys(char.speed).filter((k) => char.speed[k])
+  if (char.__fSpeedType.length)
+    char._fSpeed = char.__fSpeedType.map((k) => char.speed[k].number || char.speed[k]).sort((a, b) => sort(a, b))[0]
   else char._fSpeed = 0
-  if (char.speed.canHover) char._fSpeedType.push('hover')
+  if (char.speed.canHover) char.__fSpeedType.push('hover')
 
   // AC
   if (char.ac === undefined) char.ac = []
 
-  char._fAc = char.ac.map((it) => it.ac || it)
+  char.__fAc = char.ac.map((it) => it.ac || it)
 
   // HP
   if (char.hp === undefined) char.hp = { average: 'Unknown' }
 
   if (char.hp.average) {
-    char._fHp = char.hp.average
-    char._fMaximumHp = int(char._fHp, undefined) // set maximum HP as the average per now
+    char.__fHp = char.hp.average
+    char.__fMaximumHp = int(char.__fHp, undefined) // set maximum HP as the average per now
     // TODO: implement something to change between average, minimum and maximum hp at tracker
   } else if (char.hp.rolls) {
     // hp doesnt have average, so is a character with proper value
-    char._fMaximumHp = sum(char.hp.rolls, sum(char.hp.bonus))
-    char._fHp = char._fMaximumHp
+    char.__fMaximumHp = sum(char.hp.rolls, sum(char.hp.bonus))
+    char.__fHp = char.__fMaximumHp
+  }
+
+  // SIZE
+  if (char.size) {
+    char.size = [char.size].flat(1)
+    char.__fSize = char.size.map((s) => s.size | s)
   }
 
   // ALIGNMENT
   if (char.alignment) {
-    const tempAlign =
+    const constAlignment =
       typeof char.alignment[0] === 'object'
         ? Array.prototype.concat.apply(
             [],
             char.alignment.map((a) => a.alignment)
           )
         : [...char.alignment]
-    if (tempAlign.includes('N') && !tempAlign.includes('G') && !tempAlign.includes('E')) tempAlign.push('NY')
+
+    const tempAlign = _.cloneDeep(constAlignment)
+    if (tempAlign.length === 1 && tempAlign.includes('N')) Array.prototype.push.apply(tempAlign, ['NX', 'NY'])
     else if (tempAlign.includes('N') && !tempAlign.includes('L') && !tempAlign.includes('C')) tempAlign.push('NX')
-    else if (tempAlign.length === 1 && tempAlign.includes('N')) Array.prototype.push.apply(tempAlign, ['NX', 'NY'])
-    char._fAlign = tempAlign
+    else if (tempAlign.includes('N') && !tempAlign.includes('G') && !tempAlign.includes('E')) tempAlign.push('NY')
+
+    char.__fAlign = tempAlign
+    char.__tAlignment = alignment.abbreviationToFull(constAlignment).join(' ')
   } else {
-    char._fAlign = null
+    char.__fAlign = null
+    char.__tAlignment = null
   }
 
   // OTHERS
-  char._fVuln = char.vulnerable ? allImmunitiesAndResistances(char.vulnerable, 'vulnerable') : []
-  char._fRes = char.resist ? allImmunitiesAndResistances(char.resist, 'resist') : []
-  char._fImm = char.immune ? allImmunitiesAndResistances(char.immune, 'immune') : []
-  char._fCondImm = char.conditionImmune ? allImmunitiesAndResistances(char.conditionImmune, 'conditionImmune') : []
-  char._fSave = char.save ? Object.keys(char.save) : []
-  char._fSkill = char.skill ? Object.keys(char.skill) : []
-  char._fSources = char.otherSources ? [char.source].concat(char.otherSources.map((src) => src.source)) : char.source
+  char.__fVuln = char.vulnerable ? allImmunitiesAndResistances(char.vulnerable, 'vulnerable') : []
+  char.__fRes = char.resist ? allImmunitiesAndResistances(char.resist, 'resist') : []
+  char.__fImm = char.immune ? allImmunitiesAndResistances(char.immune, 'immune') : []
+  char.__fCondImm = char.conditionImmune ? allImmunitiesAndResistances(char.conditionImmune, 'conditionImmune') : []
+  char.__fSave = char.save ? Object.keys(char.save) : []
+  char.__fSkill = char.skill ? Object.keys(char.skill) : []
+  char.__fSources = char.otherSources ? [char.source].concat(char.otherSources.map((src) => src.source)) : char.source
 
   // _ROLLS
   if (char._rolls === undefined || char._rolls === null || !_.isObjectLike(char._rolls)) {
@@ -697,7 +742,7 @@ export function make(char) {
     const hp = {
       current: undefined, // just a number, should reflect total otherwise
       temporary: undefined, // usually 0
-      total: int(char._fMaximumHp, undefined) // usualy SUM(hp.maximum), but its here for any bonusus/onusus
+      total: int(char.__fMaximumHp, undefined) // usualy SUM(hp.maximum), but its here for any bonusus/onusus
     }
     if (!_.isObjectLike(char._hp)) {
       hp[default_hp_key] = int(char._hp, hp.total)
@@ -706,7 +751,7 @@ export function make(char) {
     char._hp = hp
   }
 
-  if (char._hp.total === undefined) char._hp.total = char._fMaximumHp
+  if (char._hp.total === undefined) char._hp.total = char.__fMaximumHp
   if (char._hp.temporary === undefined) char._hp.temporary = 0
   if (char._hp.current === undefined) char._hp.current = char._hp.total
   if (char._hp.death_saving_throw === undefined) char._hp.death_saving_throw = [false, false, false, false, false]
@@ -717,9 +762,19 @@ export function make(char) {
   }
 
   // _ID
-  char._id = `${char.name}#${char.source}--${uuid().substr(0, 7)}`
+  if (!isValid(char._id) || isValid(_id)) char._id = _id || `${char.source.toLowerCase()}--${uuid().substr(0, 9)}`
+
+  // MAKE PROCESS VALIDATOR
+  if (!('__character' in char)) char.__character = true
 
   return char
+}
+
+export function simplify(char) {
+  return Object.keys(char).reduce((obj, key) => {
+    if (key.slice(0, 2) === '__') return obj
+    return { ...obj, [key]: char[key] }
+  }, {})
 }
 
 export default {
@@ -734,6 +789,7 @@ export default {
   characterSkillBonus,
   characterSavingThrowBonus,
   // RENDERERS
+  sizeToArray,
   speedToArray,
   acToArray,
   skillsToArray,
@@ -743,6 +799,7 @@ export default {
   immunitiesAndResistancesToArray,
   conditionImmunitiesToArray,
   conditionsToArray,
+  spellcastingToArray,
   // factory
   make
 }

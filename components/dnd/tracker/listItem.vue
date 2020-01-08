@@ -1,5 +1,10 @@
 <template>
-  <v-list-item :class="{ 'view-false': !VIEW() }" class="dnd-initiative-tracker-item">
+  <v-list-item
+    :class="{ 'view-false': !VIEW(), 'zIndex-1000': avatarOverlay }"
+    :style="selected ? 'background: #343434;' : ' opacity: 0.95'"
+    class="dnd-initiative-tracker-item"
+  >
+    <!-- {{ selected }} -->
     <v-list-item-action
       :class="{ 'view-false': !VIEW('initiative') }"
       class="align-self-center d-flex flex-row align-center grid-tracker"
@@ -21,31 +26,98 @@
       </v-dialog>
 
       <div class="align-self-center d-flex align-center flex-column">
-        <v-hover v-slot:default="{ hover }">
-          <v-btn :color="hover ? 'blue' : 'grey'" @click="handleInitiativeRoll({ add: 1 })" text icon>
-            <v-icon>mdi-chevron-up</v-icon>
-          </v-btn>
-        </v-hover>
-        <v-edit-field
-          :value="value._rolls.initiative"
-          @input="handleInitiativeRoll({ value: $event })"
-          :add="modifier(value.dex)"
-          class="title font-weight-bold"
-        ></v-edit-field>
-        <v-hover v-slot:default="{ hover }">
-          <v-btn :color="hover ? 'red' : 'grey'" @click="handleInitiativeRoll({ add: -1 })" text icon>
-            <v-icon>mdi-chevron-down</v-icon>
-          </v-btn>
-        </v-hover>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <v-hover v-slot:default="{ hover }">
+              <v-btn :color="hover ? 'blue' : 'grey'" v-on="on" @click="handleInitiativeRoll({ add: 1 })" text icon>
+                <v-icon>mdi-chevron-up</v-icon>
+              </v-btn>
+            </v-hover>
+          </template>
+          <span>Increase Initiative (Alt + <v-icon small>mdi-arrow-up</v-icon>)</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <v-edit-field
+              ref="edit-initiative"
+              :value="value._rolls.initiative"
+              @input="handleInitiativeRoll({ value: $event })"
+              @focus="focused_initiative = true"
+              @blur="focused_initiative = false"
+              :add="modifier(value.dex)"
+              v-on="on"
+              class="title font-weight-bold"
+            ></v-edit-field>
+          </template>
+          <span>Input Initiative (Shift + I)</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <v-hover v-slot:default="{ hover }">
+              <v-btn :color="hover ? 'red' : 'grey'" v-on="on" @click="handleInitiativeRoll({ add: -1 })" text icon>
+                <v-icon>mdi-chevron-down</v-icon>
+              </v-btn>
+            </v-hover>
+          </template>
+          <span>Decrease Initiative (Alt + <v-icon small>mdi-arrow-down</v-icon>)</span>
+        </v-tooltip>
       </div>
     </v-list-item-action>
+
+    <div v-if="selected" class="shortkey-buttons flex-column">
+      <v-btn
+        v-if="selected_tag !== undefined"
+        v-shortkey="['esc']"
+        @shortkey="selected_tag = undefined"
+        @click="selected_tag = undefined"
+        icon
+        color="amber"
+      >
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+      <v-btn
+        v-shortkey="['alt', 'arrowup']"
+        @shortkey="handleInitiativeRoll({ add: 1 })"
+        @click="handleInitiativeRoll({ add: 1 })"
+        small
+        icon
+        color="amber"
+      >
+        <v-icon small>mdi-arrow-up</v-icon>
+      </v-btn>
+      <v-btn
+        v-shortkey="['alt', 'arrowdown']"
+        @shortkey="handleInitiativeRoll({ add: -1 })"
+        @click="handleInitiativeRoll({ add: -1 })"
+        small
+        icon
+        color="amber"
+      >
+        <v-icon small>mdi-arrow-down</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['i']" @shortkey="rollInitiative" @click="rollInitiative" small icon color="amber">
+        <v-icon small>mdi-dice-d20-outline</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['shift', 'i']" @shortkey="focusInitiative()" @click="focusInitiative()" small icon color="amber">
+        <v-icon small>mdi-speedometer</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['arrowright']" @shortkey="handleArrowRight" @click="handleArrowRight" small icon color="amber">
+        <v-icon small>mdi-arrow-right</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['arrowleft']" @shortkey="handleArrowLeft" @click="handleArrowLeft" small icon color="amber">
+        <v-icon small>mdi-arrow-left</v-icon>
+      </v-btn>
+    </div>
 
     <v-list-item-avatar
       class="align-self-center d-flex flex-column justify-center align-center grid-avatar"
       style="min-width: 72px; margin-right: 32px;"
     >
-      <v-avatar @click="avatarOverlay = !!avatar()" size="72" color="amber darken-1">
-        <v-img v-if="avatar() && VIEW('avatar')" :src="avatar()"></v-img>
+      <v-avatar @click="avatarOverlay = !!avatar()" :color="!avatar() ? 'amber darken-1' : 'grey darken-4'" size="72">
+        <v-img v-if="avatar() && croppedAvatar() === undefined" :src="avatar()"></v-img>
+        <v-cropping-image v-else-if="avatar() && croppedAvatar()" :src="avatar()" :crop="croppedAvatar()"></v-cropping-image>
         <span v-else class="black--text headline d-flex align-center" style="height: 72px">{{
           VIEW('avatar') ? abreviattion(value.name) : '?'
         }}</span>
@@ -54,7 +126,12 @@
         v-if="VIEW('ac') && value.ac && value.ac.length > 0"
         :value="value.ac"
         :preprocessor="ac"
-        @input="(event) => (value.ac[event.index].ac = event.value)"
+        @input="
+          (event) => {
+            value.ac[event.index].ac = event.value
+            handleChange()
+          }
+        "
         placeholder="?"
         label="AC"
         class="mt-2"
@@ -63,8 +140,8 @@
 
     <v-overlay v-if="VIEW('avatar')" :value="avatarOverlay" @click="avatarOverlay = false">
       <div class="d-flex flex-column justify-center align-center">
-        <v-img :src="avatar()" @click="avatarOverlay = false"></v-img>
-        <v-btn @click="avatarOverlay = false" icon class="mt-2">
+        <v-img :src="avatar()" @click="avatarOverlay = false" contain style="max-height: 90vh;"></v-img>
+        <v-btn @click="avatarOverlay = false" v-shortkey="['esc']" @shortkey="avatarOverlay = false" icon class="mt-2">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </div>
@@ -74,18 +151,22 @@
       <v-list-item-title class="title">
         <div>
           <span>{{ VIEW('name') ? value.name : '??' }}</span>
-          <span v-if="VIEW('source')" class="grey--text subtitle-1 font-weight-black ml-3">{{ value.source }} </span>
+          <span v-if="VIEW('source')" class="grey--text subtitle-1 font-weight-black ml-3">{{ value.source }}</span>
         </div>
         <div
           v-if="VIEW('type') || VIEW('level') || VIEW('cr')"
           class="caption grey--text text--lighten-1"
           style="margin-top: -6px; overflow: auto;"
         >
-          <span v-if="VIEW('type')" class="font-italic">{{ value._pTypes.asText }} &mdash;</span>
+          <span v-if="VIEW('type')" class="font-italic">{{ value.__pTypes.asText }}</span>
+          <span v-if="VIEW('type') && (VIEW('cr') || VIEW('level'))">&mdash;</span>
           <span v-if="VIEW('cr') || VIEW('level')" class="font-italic">{{ level_or_cr() }}</span>
         </div>
+        <div v-if="VIEW('alignment')" class="caption grey--text text--lighten-1" style="margin-top: -3px; overflow: auto;">
+          <span class="font-italic">{{ value.__tAlignment }}</span>
+        </div>
       </v-list-item-title>
-      <v-list-item-subtitle>
+      <v-list-item-subtitle v-if="VIEW('tags') || VIEW('abilities')">
         <div
           v-if="VIEW('abilities')"
           class="abilities d-flex flex-row justify-space-between mt-2"
@@ -107,13 +188,23 @@
         </div>
         <div v-if="VIEW('tags')" class="tags mt-4 d-flex flex-row flex-wrap">
           <v-tags
+            v-if="VIEW('tags.size')"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.size')"
+            :value="sizes(value.size)"
+            :selected="selected_tag === 'size'"
+            title="Size"
+            label="Size"
+          ></v-tags>
+          <v-tags
             v-if="VIEW('tags.speed')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.speed')"
             :value="value.speed"
             :preprocessor="speed"
+            :selected="selected_tag === 'speed'"
             @input="
               (event) => {
                 lodashSet(value.speed, [event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             :source="{
@@ -132,11 +223,13 @@
           ></v-tags>
           <v-tags
             v-if="VIEW('tags.saves')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.saves')"
             :value="saves(value)"
+            :selected="selected_tag === 'saves'"
             @input="
               (event) => {
                 lodashSet(value.save, [event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             :source="{
@@ -146,7 +239,7 @@
             :template="[
               true,
               {
-                proficiency_ratio: 1.1,
+                ratio: 1.1,
                 bonus: 1
               }
             ]"
@@ -155,11 +248,13 @@
           ></v-tags>
           <v-tags
             v-if="VIEW('tags.skills')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.skills')"
             :value="skills(value)"
+            :selected="selected_tag === 'skills'"
             @input="
               (event) => {
                 lodashSet(value.skill, [event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             :source="{
@@ -169,7 +264,7 @@
             :template="[
               true,
               {
-                proficiency_ratio: 1.1,
+                ratio: 1.1,
                 bonus: 1
               }
             ]"
@@ -177,7 +272,7 @@
             label="Proficient"
           ></v-tags>
           <v-tags
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.' + immRes.key)"
             v-for="immRes in [
               { key: 'vulnerable', title: 'Vulnerabilities', label: 'Vulnerability' },
               { key: 'resist', title: 'Resistances', label: 'Resistance' },
@@ -185,9 +280,11 @@
             ].filter((ir_obj) => !!VIEW(`tags.${ir_obj.key}`))"
             :key="immRes.key"
             :value="immunitiesResistances(value[immRes.key])"
+            :selected="selected_tag === immRes.key"
             @input="
               (event) => {
                 lodashSet(value[immRes.key], [...event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             :title="`DMG. ${immRes.title}`"
@@ -195,11 +292,13 @@
           ></v-tags>
           <v-tags
             v-if="VIEW('tags.conditionImmune')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.conditionImmune')"
             :value="conditionImmunities(value.conditionImmune)"
+            :selected="selected_tag === 'conditionImmune'"
             @input="
               (event) => {
                 lodashSet(value.conditionImmune, [event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             title="Condition Immunities"
@@ -207,8 +306,9 @@
           ></v-tags>
           <v-tags
             v-if="VIEW('tags.senses')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.senses')"
             :value="senses(value)"
+            :selected="selected_tag === 'senses'"
             @input="
               (event) => {
                 if (event.item.key === 'passive') {
@@ -216,6 +316,7 @@
                 } else {
                   lodashSet(value.senses, [event.item.key, ...event.path], event.value)
                 }
+                handleChange()
               }
             "
             :source="{
@@ -235,11 +336,13 @@
           ></v-tags>
           <v-tags
             v-if="VIEW('tags.languages')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.languages')"
             :value="languages(value.languages)"
+            :selected="selected_tag === 'languages'"
             @input="
               (event) => {
                 lodashSet(value.languages, [event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             :source="{
@@ -257,12 +360,24 @@
             label="Language"
           ></v-tags>
           <v-tags
+            v-for="(casting, casting_index) in [value.spellcasting].flat(1).filter((s) => s !== undefined)"
+            :key="casting_index"
+            v-if="VIEW('tags.spellcasting')"
+            :editable="PERMISSIONS.EDIT && EDIT('tags.spellcasting')"
+            :value="spellcasting(casting, value)"
+            :selected="selected_tag === 'spellcasting'"
+            :title="casting.name"
+            label="Spellcasting"
+          ></v-tags>
+          <v-tags
             v-if="VIEW('tags._conditions')"
-            :editable="PERMISSIONS.EDIT"
+            :editable="PERMISSIONS.EDIT && EDIT('tags._conditions')"
             :value="conditions(value._conditions)"
+            :selected="selected_tag === '_conditions'"
             @input="
               (event) => {
                 lodashSet(value._conditions, [event.item.key, ...event.path], event.value)
+                handleChange()
               }
             "
             :source="{
@@ -291,11 +406,11 @@
     </v-list-item-content>
 
     <v-list-item-action v-if="VIEW('_hp')" class="align-self-center grid-hp">
-      <dnd-hp :value="value._hp"></dnd-hp>
+      <dnd-hp :value="value._hp" @change="handleChange()" :selected="selected"></dnd-hp>
     </v-list-item-action>
 
     <v-list-item-action class="align-self-center grid-actions">
-      <v-tooltip v-if="VIEW('_rolls') && VIEW('_rolls.initiative')" left>
+      <v-tooltip v-if="VIEW('_rolls') && VIEW('_rolls.initiative') && GLOBAL_VIEW('initiative')" left>
         <template v-slot:activator="{ on }">
           <v-hover v-slot:default="{ hover }">
             <v-btn
@@ -309,10 +424,10 @@
             </v-btn>
           </v-hover>
         </template>
-        <span>Roll Initiative (d20)</span>
+        <span>Roll Initiative (I)</span>
       </v-tooltip>
 
-      <v-tooltip v-if="PERMISSIONS.EDIT" left>
+      <v-tooltip v-if="PERMISSIONS.EDIT && EDIT('remove')" left>
         <template v-slot:activator="{ on }">
           <v-hover v-slot:default="{ hover }">
             <v-btn :color="hover ? 'red' : 'grey'" v-on="on" @click="handleRemove()" text icon>
@@ -333,6 +448,7 @@ import _ from 'lodash'
 // eslint-disable-next-line no-unused-vars
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 
+// eslint-disable-next-line no-unused-vars
 import { info } from '../../../utils/debug'
 // eslint-disable-next-line no-unused-vars
 import VArrayFieldVue from '../../utils/VArrayField/index.vue'
@@ -342,7 +458,8 @@ import { LIST_ABBREVIATIONS } from '../../../utils/system/constants/abilities'
 import { LIST_SKILLS } from '../../../utils/system/constants/skills'
 import { LIST_CONDITIONS } from '../../../utils/system/constants/conditions'
 import { LIST_LANGUAGES } from '../../../utils/system/constants/languages'
-import { defaults } from '../../../utils/permissions'
+import { defaults, nestedValue } from '../../../utils/permissions'
+import VCroppingImageVue from '../../utils/VCroppingImage.vue'
 import { int, isValid } from '@/utils/value'
 import hpVue from '@/components/dnd/tracker/hp.vue'
 import { modifier } from '@/utils/system'
@@ -356,7 +473,8 @@ export default {
     'v-edit-field': VEditField,
     // eslint-disable-next-line vue/no-unused-components
     'v-array-field': VArrayFieldVue,
-    'v-tags': VTagsVue
+    'v-tags': VTagsVue,
+    'v-cropping-image': VCroppingImageVue
   },
   props: {
     value: {
@@ -373,12 +491,19 @@ export default {
     permission: {
       type: Object,
       default: () => ({ VIEW: true })
+    },
+    selected: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     if (!isValid(this.permissions)) this.permissions = defaults('character')
 
     return {
+      // shortkeys
+      selected_tag: undefined,
+      focused_initiative: false,
       // constants
       ATRIBUTES: LIST_ABBREVIATIONS,
       SKILLS: LIST_SKILLS,
@@ -398,25 +523,113 @@ export default {
   },
   computed: {
     ...mapState('ui', ['PERMISSIONS']),
+    ...mapGetters(['GLOBAL_PERMISSIONS']),
+    EDIT() {
+      return (path) => {
+        if (path === undefined) {
+          if (this.permission.edit === undefined) return true
+          const nested = nestedValue(this.permission.edit)
+          return nested === undefined ? true : nested
+        }
+
+        const _nested = nestedValue(_.get(this.permission.edit || {}, path))
+        return _nested === undefined ? true : _nested
+      }
+    },
     VIEW() {
       return (path) => {
-        if (path === undefined) return this.permission.view === undefined ? true : this.permission.view
-        return _.get(this.permission.view || {}, path)
+        if (path === undefined) {
+          if (this.permission.view === undefined) return true
+          const nested = nestedValue(this.permission.view)
+          return nested === undefined ? true : nested
+        }
+
+        const _nested = nestedValue(_.get(this.permission.view || {}, path))
+        return _nested === undefined ? true : _nested
+      }
+    },
+    GLOBAL_VIEW() {
+      return (path) => {
+        if (path === undefined) {
+          if (this.GLOBAL_PERMISSIONS.view === undefined) return true
+          const nested = nestedValue(this.GLOBAL_PERMISSIONS.view)
+          return nested === undefined ? true : nested
+        }
+
+        const _nested = nestedValue(_.get(this.GLOBAL_PERMISSIONS.view || {}, path))
+        return _nested === undefined ? true : _nested
       }
     },
     color() {
       const color = this.$props.value._color === undefined ? '#616161' : this.$props.value._color
       return color.hex || color
+    },
+    tags() {
+      const TAGS = [
+        {
+          key: 'speed',
+          size: this.speed(this.value.speed).length
+        },
+        {
+          key: 'saves',
+          size: this.saves(this.value).length
+        },
+        {
+          key: 'skills',
+          size: this.skills(this.value).length
+        },
+        {
+          key: 'vulnerable',
+          size: this.immunitiesResistances(this.value.vulnerable).length
+        },
+        {
+          key: 'resist',
+          size: this.immunitiesResistances(this.value.resist).length
+        },
+        {
+          key: 'immune',
+          size: this.immunitiesResistances(this.value.immune).length
+        },
+        {
+          key: 'conditionImmune',
+          size: this.conditionImmunities(this.value.conditionImmune).length
+        },
+        {
+          key: 'senses',
+          size: this.senses(this.value).length
+        },
+        {
+          key: 'languages',
+          size: this.languages(this.value.languages).length
+        },
+        {
+          key: '_conditions',
+          size: this.conditions(this.value._conditions).length
+        }
+      ]
+
+      return TAGS.filter((t) => t.size > 0 || (this.PERMISSIONS.EDIT && this.EDIT('tags.' + t.key)))
+    }
+  },
+  watch: {
+    selected(newVal, oldVal) {
+      if (!newVal && oldVal) {
+        if (this.focused_initiative) {
+          this.blurInitiative()
+        }
+        this.selected_tag = undefined
+      }
     }
   },
   mounted() {
-    info('Mounted List Item', this.$props.value)
+    // info('Mounted List Item', this.$props.value)
   },
   methods: {
     lodashSet: vueSet,
     modifier,
     hasRolled: CHARACTER.hasRolled,
     ac: CHARACTER.acToArray,
+    sizes: CHARACTER.sizeToArray,
     speed: CHARACTER.speedToArray,
     skills: CHARACTER.skillsToArray,
     saves: CHARACTER.savesToArray,
@@ -425,6 +638,7 @@ export default {
     immunitiesResistances: CHARACTER.immunitiesAndResistancesToArray,
     conditionImmunities: CHARACTER.conditionImmunitiesToArray,
     conditions: CHARACTER.conditionsToArray,
+    spellcasting: CHARACTER.spellcastingToArray,
     abreviattion(name) {
       return name
         .split(' ')
@@ -436,12 +650,14 @@ export default {
       const _images = (this.$props.value._fluff && this.$props.value._fluff.images) || []
       const images = _images.filter((i) => i.type === 'image')
 
-      if (images.length > 1) throw new Error('Too many images to decide a avatar')
+      // if (images.length > 1) throw new Error('Too many images to decide a avatar')
 
       if (images.length === 0) return false
 
       if (images[0].href) {
-        if (images[0].href.type === 'internal') {
+        if (images[0].href.type === 'custom') {
+          return `characters/${images[0].href.path}`
+        } else if (images[0].href.type === 'internal') {
           return `img/${images[0].href.path}`
         } else {
           return images[0].href.path
@@ -450,8 +666,18 @@ export default {
         throw new Error('No HREF property in image')
       }
     },
+    croppedAvatar() {
+      const _images = (this.$props.value._fluff && this.$props.value._fluff.images) || []
+      const images = _images.filter((i) => i.type === 'image')
+
+      // if (images.length > 1) throw new Error('Too many images to decide a avatar')
+
+      if (images.length === 0) return undefined
+
+      return images[0].crop || undefined
+    },
     level_or_cr() {
-      const crLevel = this.$props.value._fCrLevel
+      const crLevel = this.$props.value.__fCrLevel
       if (crLevel.level) return crLevel.display
       else return `CR ${crLevel.display}`
     },
@@ -484,9 +710,11 @@ export default {
       } else {
         this.colorDialog = open
       }
+      this.handleChange()
     },
     handleColor(event) {
       this.$props.value._color = event
+      this.handleChange()
     },
     handleInitiativeRoll({ add, value }) {
       // this.set_initiative({ _id, value, add })
@@ -498,6 +726,10 @@ export default {
       if (add !== undefined) {
         this.$set(this.$props.value._rolls, 'initiative', this.$props.value._rolls.initiative + int(add, 0))
       }
+      this.handleChange()
+    },
+    handleChange() {
+      this.$emit('change')
     },
     handleRemove() {
       const name = this.$props.value.name
@@ -509,6 +741,30 @@ export default {
       })
       // this.remove(_id)
       this.$emit('remove')
+    },
+    focusInitiative() {
+      this.$refs['edit-initiative'].focus()
+      this.focused_initiative = true
+    },
+    blurInitiative() {
+      this.$refs['edit-initiative'].blur()
+      this.focused_initiative = false
+    },
+    handleArrowRight() {
+      const currentIndex = this.selected_tag === undefined ? undefined : this.tags.findIndex((t) => t.key === this.selected_tag)
+
+      const value = (isValid(currentIndex) ? currentIndex : -1) + 1
+      const nextIndex = value >= this.tags.length ? 0 : value
+
+      this.selected_tag = this.tags[nextIndex].key
+    },
+    handleArrowLeft() {
+      const currentIndex = this.selected_tag === undefined ? undefined : this.tags.findIndex((t) => t.key === this.selected_tag)
+
+      const value = (isValid(currentIndex) ? currentIndex : +1) - 1
+      const nextIndex = value < 0 ? this.tags.length + value : value
+
+      this.selected_tag = this.tags[nextIndex].key
     }
   }
 }
@@ -517,6 +773,10 @@ export default {
 <style lang="sass" scoped>
 .view-false
   display: none !important
+
+.zIndex-1000
+  z-index: 1000 !important
+  opacity: 1 !important
 
 .dnd-initiative-tracker-item
   .v-edit-field::v-deep

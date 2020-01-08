@@ -19,6 +19,8 @@ module.exports = {
   ],
   // add your custom rules here
   rules: {
+    'no-console': 'off',
+    'no-debugger': 'off',
     camelcase: 'off',
     'max-len': [
       'error',

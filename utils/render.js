@@ -4018,13 +4018,13 @@ Renderer.monster = {
   },
 
   initParsed(mon) {
-    mon._pTypes = mon._pTypes || Parser.monTypeToFullObj(mon.type) // store the parsed type
-    mon._pCr = mon._pCr || (mon.cr == null ? null : mon.cr.cr || mon.cr)
+    mon.__pTypes = mon.__pTypes || Parser.monTypeToFullObj(mon.type) // store the parsed type
+    mon.__pCr = mon.__pCr || (mon.cr == null ? null : mon.cr.cr || mon.cr)
   },
 
   updateParsed(mon) {
-    delete mon._pTypes
-    delete mon._pCr
+    delete mon.__pTypes
+    delete mon.__pCr
     Renderer.monster.initParsed(mon)
   },
 

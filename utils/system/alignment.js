@@ -1,4 +1,6 @@
-export function abbreviationToFull(alignment) {
+import _ from 'lodash'
+
+function helperAbbreviationToFull(alignment) {
   if (!alignment) return null // used in sidekicks
   if (typeof alignment === 'object') {
     if (alignment.special != null) {
@@ -35,6 +37,11 @@ export function abbreviationToFull(alignment) {
     }
     return alignment
   }
+}
+
+export function abbreviationToFull(alignment) {
+  if (_.isEqual(['N'], alignment) || _.isEqual(['NX', 'NY'], alignment)) return ['True Neutral']
+  return [alignment].flat(1).map(helperAbbreviationToFull)
 }
 
 export function listToFull(alignList) {

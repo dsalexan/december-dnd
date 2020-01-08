@@ -29,29 +29,29 @@ export function modifier(value, string = false) {
 
 /**
  * Returns Proficient modifier for a specific proficiency
- * @param {*} proficiency Proficiency Object, (proficiency_ratio, bonus OR true OR string [e.g. +5])
+ * @param {*} proficiency Proficiency Object, (ratio, bonus OR true OR string [e.g. +5])
  * @param {*} proficiency_bonus
  * @param {*} ability
  */
 export function proficiency_modifier(proficiency, proficiency_bonus, ability, string = false) {
-  let proficiency_ratio = 0
+  let ratio = 0
   let bonus = 0
   const ability_modifier = modifier(ability)
 
-  if (bool(proficiency) !== undefined) proficiency_ratio = +bool(proficiency)
+  if (bool(proficiency) !== undefined) ratio = +bool(proficiency)
   else if (_.isString(proficiency)) bonus = int(proficiency)
   else if (_.isObjectLike(proficiency)) {
-    proficiency_ratio = proficiency.proficiency_ratio || 0
+    ratio = proficiency.ratio || 0
     bonus = proficiency.bonus || 0
   } else if (!isValid(proficiency)) {
-    proficiency_ratio = 0
+    ratio = 0
     bonus = 0
   } else {
     warn('proficiency_modifier', 'Not implemented variable type for skill value', typeof proficiency, proficiency)
     return signal(proficiency)
   }
 
-  const proficiencyModifier = ability_modifier + Math.floor(proficiency_bonus * proficiency_ratio) + bonus
+  const proficiencyModifier = ability_modifier + Math.floor(proficiency_bonus * ratio) + bonus
 
   return string ? `${proficiencyModifier > 0 ? '+' : ''}${proficiencyModifier}` : proficiencyModifier
 }

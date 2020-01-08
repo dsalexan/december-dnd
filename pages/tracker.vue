@@ -1,12 +1,31 @@
 <template>
   <div>
+    <div class="shortkey-buttons">
+      <v-btn text color="amber" dark>
+        {{ selected }}
+      </v-btn>
+      <v-btn v-shortkey="['esc']" @shortkey="selected = undefined" @click="selected = undefined" icon color="amber">
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['arrowdown']" @shortkey="handleArrowDown" @click="handleArrowDown" icon color="amber">
+        <v-icon>mdi-arrow-down</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['arrowup']" @shortkey="handleArrowUp" @click="handleArrowUp" icon color="amber">
+        <v-icon>mdi-arrow-up</v-icon>
+      </v-btn>
+    </div>
     <!-- CHARACTER_PERMISSIONS {{ characters_with_permissions }} -->
+    <!-- <br /> -->
+    <!-- GLOBAL_PERMISSIONS {{ VIEW() }} -->
     <v-list three-line>
       <dnd-list-item
         v-for="item in characters_with_permissions"
-        :key="item._id"
+        :key="item.character._id"
         :value="item.character"
         :permission="item.permission"
+        :selected="selected === item.character._id"
+        @change="onChange(item.character._id)"
+        @remove="onRemove(item.character._id)"
       ></dnd-list-item>
     </v-list>
 
@@ -39,7 +58,7 @@
     </v-dialog>
 
     <v-speed-dial
-      v-if="PERMISSIONS.EDIT"
+      v-if="VIEW('add')"
       v-model="fab"
       open-on-hover
       transition="slide-x-reverse-transition"
@@ -75,13 +94,14 @@ import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 import { info } from '../utils/debug'
 import listItemVue from '../components/dnd/tracker/listItem.vue'
 
-import { defaults } from '../utils/permissions'
+import { defaults, nestedValue } from '../utils/permissions'
+import { isValid } from '../utils/value'
 import FormCharacter from '@/components/forms/character'
 import Filter from '@/components/5etools/filter'
 
 import { characterFilter } from '@/domain/filter'
 
-// console.log('CHARACTER FILTER', characterFilter)
+// info('CHARACTER FILTER', characterFilter)
 
 export default {
   components: {
@@ -92,6 +112,8 @@ export default {
   data() {
     return {
       fab: false,
+      // shortkeys
+      selected: undefined,
       // hp
       hpDialog: false,
       hpSum: undefined,
@@ -108,19 +130,32 @@ export default {
   },
   computed: {
     ...mapState('ui', ['PERMISSIONS']),
-    ...mapState('characters', {
-      CHARACTER_PERMISSIONS: 'permissions'
-    }),
     ...mapGetters('characters', {
       character: 'character',
-      characters: 'sorted'
+      characters: 'sorted',
+      CHARACTER_PERMISSIONS: 'permissions'
     }),
+    ...mapGetters(['GLOBAL_PERMISSIONS']),
+    VIEW() {
+      return (path) => {
+        if (path === undefined) {
+          if (this.GLOBAL_PERMISSIONS.view === undefined) return true
+          const nested = nestedValue(this.GLOBAL_PERMISSIONS.view)
+          return nested === undefined ? true : nested
+        }
+
+        const _nested = nestedValue(_.get(this.GLOBAL_PERMISSIONS.view || {}, path))
+        return _nested === undefined ? true : _nested
+      }
+    },
     characters_with_permissions() {
       return this.characters
         .map((char) => {
           const permission = this.CHARACTER_PERMISSIONS[char._id] || defaults('character')
 
-          if (permission.VIEW === false) return undefined
+          const nested = nestedValue(permission.view)
+          const _view = nested === undefined ? true : nested
+          if (!_view) return undefined
 
           return {
             character: char,
@@ -132,17 +167,20 @@ export default {
   },
   created() {},
   methods: {
-    ...mapMutations('characters', ['add', 'remove', 'set_initiative', 'set_hp']),
+    ...mapMutations('characters', ['set_initiative', 'set_hp']),
+    ...mapActions('characters', ['init', 'add', 'remove', 'notifyCharacterUpdate']),
     handleAddCharacter({ cancel = false, data = {} } = {}) {
       this.formDialog = false
       this.formModel = undefined
 
       if (!cancel) {
         this.add({
-          ...data,
-          type: {
-            type: data.type,
-            tags: data.tags
+          data: {
+            ...data,
+            type: {
+              type: data.type,
+              tags: data.tags
+            }
           }
         })
       }
@@ -155,8 +193,8 @@ export default {
       // this.loadBestiary()
     },
     filterChange(entry) {
-      console.log('filter change', entry)
-      this.add(_.cloneDeep(entry))
+      // info('filter change', entry)
+      this.add({ data: _.cloneDeep(entry) })
     },
     setHp(_id, sum, key = 'current') {
       this.hpDialog = false
@@ -167,9 +205,10 @@ export default {
 
       if (sum === undefined) return
 
-      // console.log('SET HP', _id, sum, key)
+      // info('SET HP', _id, sum, key)
 
       this.set_hp({ _id, value: sum, key })
+      this.notifyCharacterUpdate(_id)
     },
     onKeyUp(e, _id, key = 'current') {
       const value = this.character(_id)._hp[key]
@@ -179,6 +218,42 @@ export default {
       if (add === undefined || value === undefined) return
 
       this.set_hp({ _id, value: value + add, key })
+      this.notifyCharacterUpdate(_id)
+    },
+    onChange(_id) {
+      this.notifyCharacterUpdate(_id)
+    },
+    onRemove(id) {
+      this.remove({ id })
+    },
+    handleArrowDown() {
+      const currentIndex =
+        this.selected === undefined
+          ? undefined
+          : this.characters_with_permissions.findIndex((char) => char.character._id === this.selected)
+
+      const value = (isValid(currentIndex) ? currentIndex : -1) + 1
+      const nextIndex = value >= this.characters_with_permissions.length ? 0 : value
+
+      this.selected = this.characters_with_permissions[nextIndex].character._id
+    },
+    handleArrowUp() {
+      const currentIndex =
+        this.selected === undefined
+          ? this.characters_with_permissions[0].character._id
+          : this.characters_with_permissions.findIndex((char) => char.character._id === this.selected)
+
+      const value = (isValid(currentIndex) ? currentIndex : 1) - 1
+      const nextIndex = value < 0 ? this.characters_with_permissions.length + value : value
+
+      this.selected = this.characters_with_permissions[nextIndex].character._id
+    },
+    handleShortKeys(event) {
+      switch (event.srcKey) {
+        case 'deselect':
+          this.selected = undefined
+          break
+      }
     }
   }
 }

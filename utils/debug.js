@@ -9,8 +9,11 @@ info.log = console.log.bind(console)
 warn.log = console.warn.bind(console)
 error.log = console.error.bind(console)
 
+export const not = info.extend('notification')
+
 export default {
   info,
   warn,
-  error
+  error,
+  not
 }

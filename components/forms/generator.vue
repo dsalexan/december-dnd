@@ -222,7 +222,7 @@ export default {
   methods: {
     lodashGet: _.get,
     onInput(path, value) {
-      // console.log('ON INPUT', path, value)
+      // info('ON INPUT', path, value)
       this.$emit('input', { value, path })
     }
   }

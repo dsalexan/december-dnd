@@ -1,5 +1,6 @@
 Initiative Tracker:
   ✔ Layout @done(19-12-22 04:21)
+    ✔ Add confirm button on editField at initiative @done(20-01-05 15:49)
     ✔ Highlight D20 button when there is no roll @done(19-12-22 16:00)
     ✔ 5etools link to view the character @done(19-12-28 05:25)
     ✔ Toast when rolling dice @started(19-12-22 16:05) @done(19-12-22 16:53) @lasted(48m18s)
@@ -43,18 +44,82 @@ Initiative Tracker:
       ✔ Add condition immunities @started(19-12-30 17:49) @done(19-12-31 16:53) @lasted(23h4m53s)
       ✔ Add saving throws @started(19-12-30 04:30) @done(19-12-30 05:56) @lasted(1h26m34s)
     ☐ DragNDrop to change initiative
+    ✔ Fix scrolls bar all across @done(20-01-05 15:58)
+      ✔ Specially on types @done(20-01-05 15:58)
+    ✔ Fix HP height weirdness on death saves @done(20-01-05 16:00)
+    ✔ Add fast control through keyboard @done(20-01-05 19:25)
+      ✔ ADD TOOLTIPS @started(20-01-05 19:01) @done(20-01-05 19:19) @lasted(18m49s)
+      ✔ Arrows UP/DOWN select character @done(20-01-05 17:35)
+      ✔ Pressing +/- opens heal/damage dialog @done(20-01-05 17:45)
+        ✔ Auto focus on text field @done(20-01-05 19:25)
+        ✔ Enter on such dialog confirms @done(20-01-05 19:25)
+        ✔ Esc on such dialog cancels @done(20-01-05 19:25)
+      ✔ H focus on current HP @done(20-01-05 18:06)
+        ✔ M focus on maximum HP / open maximum state of HP component @done(20-01-05 18:06)
+      ✔ Holding ALT + UP/DOWN increases/decreases initiative roll @done(20-01-05 18:16)
+      ✔ I rolls initiative, SHIFT + I focus on edit field @done(20-01-05 18:29)
+      ✔ LEFT/RIGHT loop trough tags, SPACE/ENTER toogles a tag @done(20-01-05 19:00)
   ✔ Sync with state store (vuex) @done(19-12-22 19:08)
   ✔ Sync store with data from 5etools @done(19-12-28 05:25)
     ✔ Probably write filter code to me able to search data/ @done(19-12-28 05:25)
     ✔ Sync image too @started(19-12-28 05:28) @done(19-12-28 06:55) @lasted(1h27m41s)
     ✔ Show source @done(19-12-28 07:00)
   ☐ Implement history os changes and undo/redo
-  ☐ Persist state
+  ✔ Persist state @started(20-01-05 04:41) @done(20-01-05 07:44) @lasted(3h3m39s)
+    ✔ Notify other devices on tracker update data @done(20-01-05 07:44)
   ☐ implement something to change between average, minimum and maximum hp at tracker
-  ☐ Make like a "server thing"
-  ☐ Make some tags (like "condition") always visible or default visible
-  ☐ Determinate default permissions related to new characters based on a universal access level from browser storate or query string
+    ☐ Maybe stop recording current HP and change to current Damage Taken, current HP becomes a getter
+  ✘ Make some tags (like "condition") always visible or default visible @cancelled(20-01-05 04:41)
+  ✔ Determinate default permissions related to new characters based on a universal access level from browser storate or query string @done(20-01-05 04:41)
+  ✔ Add a ADMIN json editor for the characters @started(20-01-05 19:26) @done(20-01-05 22:33) @lasted(3h7m36s)
+  ✘ A tag for coin? (at least to keep track of coin) @cancelled(20-01-05 22:37)
+  ✔ Fix bug on some bestiary characters other than zariel @done(20-01-05 22:43)
+  ☐ Add homebrew
+  ☐ I think ai have to alow a deffered source load for non  stardard sources somewhere
+  ✔ Add size @done(20-01-07 19:01)
+  ✔ Add spellcasting tag (spell attack bonus, DC) @started(20-01-07 18:35) @done(20-01-07 19:17) @lasted(42m44s)
+  ✔ Add alignment @done(20-01-07 18:35)
+  ☐ Always on TAG (hiding label) -> do that on SIZE
+  ☐ Add fake name
+  ☐ Internacionalizar
+  ☐ Add RENDER.BREAKLINE as something like '{@br}' ON RENDER
+  ☐ Add feats
+  ☐ Only display by tracker session
+  ☐ Add support for multiple avatars
+  ✔ FIX overlay z-index when @done(20-01-08 13:21)
+  ☐ On add character add directly to tracker
+  ☐ Remove add custom character
+Users:
+  ✔ List all users @done(20-01-05 04:40)
+  ✔ List permissions by user @done(20-01-05 04:40)
+  ✔ On update permissions, fire event back to correspondent clients @done(20-01-05 04:40)
+  ✔ Acessing permissions of user from server @done(20-01-03 06:07)
+  ✔ Using users permissions to determinate what is visible @done(20-01-03 06:07)
+  ✔ Separate permission to view EDIT from permission to view ADD CHARACTER @done(20-01-05 07:23)
+  ✔ Separate permission to EDIT for differente characters at tracker @done(20-01-05 07:44)
+  ✘ Remove character index from permissions @cancelled(20-01-07 17:43)
+  ✔ Fix nestedValue @done(20-01-05 22:47)
+  ✔ Allow default setting of permissions @started(20-01-07 15:57) @done(20-01-07 17:43) @lasted(1h46m35s)
+  ☐ Fix error on loggin with non precistent user
+Characters:
+  ✔ Add real avatar for LYRA HUMANOID @done(20-01-08 02:02)
+  ✔ Create interface to add avatar @done(20-01-08 13:21)
+    ✔ Position arguments for thumbnail online @done(20-01-08 13:21)
+  ☐ Add character form generated
+  ☐ Add character from jSON
+Equipment:
+  ☐ Treasure
+    ☐ Treasure history
+Database:
+  ✔ Make one @started(20-01-05 22:47) @done(20-01-06 17:20) @lasted(18h33m13s)
+  ☐ Make a database of images?
+Server:
+  ☐ Implement domain logic
+  ✔ Connect to database @done(20-01-06 17:20)
+  ☐ Separate in TRACKERS (for multiple trackers and different characters)
 Future:
   ☐ Actions and reactions tracking
   ☐ Spells tracking
   ☐ Spell slot tracking
+  ☐ Features tracking
+  ☐ Traits tracking

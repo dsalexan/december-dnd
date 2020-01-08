@@ -2,24 +2,24 @@
 import mapify from './mapify'
 
 export const LIST_SKILLS = [
-  'athletics',
   'acrobatics',
+  'animal handling',
+  'arcana',
+  'athletics',
+  'deception',
+  'history',
+  'insight',
+  'intimidation',
+  'investigation',
+  'medicine',
+  'nature',
+  'perception',
+  'performance',
+  'persuasion',
+  'religion',
   'sleight of hand',
   'stealth',
-  'arcana',
-  'history',
-  'investigation',
-  'nature',
-  'religion',
-  'animal handling',
-  'insight',
-  'medicine',
-  'perception',
-  'survival',
-  'deception',
-  'intimidation',
-  'performance',
-  'persuasion'
+  'survival'
 ]
 
 export const RAW_ABILITY_ABBREVIATIONS = {

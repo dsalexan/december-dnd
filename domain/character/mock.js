@@ -103,7 +103,7 @@ const base = [
     skill: {
       athletics: true,
       acrobatics: {
-        proficiency_ratio: 2
+        ratio: 2
       },
       deception: '+6',
       insight: '+5',

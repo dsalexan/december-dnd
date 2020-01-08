@@ -21,14 +21,14 @@ export const B_to_A = function(abMap, b) {
 }
 
 export function vueSet(obj, path, value) {
-  console.log('VUE SET', obj, path, value)
+  // info('VUE SET', obj, path, value)
 
   function lookaheadValue(next_path) {
     let v = []
     if (next_path === undefined || !_.isInteger(int(next_path, 'string'))) {
       v = {}
     }
-    // console.log(`LOOK AHEAD VALUE`, v)
+    // info(`LOOK AHEAD VALUE`, v)
     return v
   }
 
@@ -63,6 +63,22 @@ export function vueSet(obj, path, value) {
   } else {
     Vue.set(ref, path.slice(-1)[0], value)
   }
+}
+
+export function getPaths(object) {
+  function iter(o, p) {
+    const keys = Object.keys(o)
+    if (keys.length) {
+      return keys.forEach(function(k) {
+        iter(o[k], p.concat(k))
+      })
+    }
+    result.push(p)
+  }
+
+  const result = []
+  iter(object, [])
+  return result
 }
 
 export default {

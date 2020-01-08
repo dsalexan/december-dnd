@@ -137,7 +137,7 @@ export const mutations = {
       // Vue.set(filter.groups, filter.groups.length, group)
     }
 
-    // console.log('ADD ITEM', state)
+    // info('ADD ITEM', state)
   },
   setFilter(state, { key, filter }) {
     Vue.set(state.filters, key, filter)
@@ -170,7 +170,7 @@ export const actions = {
 
     await dispatch('addFilter', {
       key: 'cr',
-      target: '_pCr',
+      target: '__pCr',
       header: 'Challenge Rating',
       model: {
         type: 'range',
@@ -196,6 +196,7 @@ export const actions = {
 
     await dispatch('addFilter', {
       key: 'size',
+      target: '__fSize',
       header: 'Size',
       items: [...SIZES.LIST_ABBREVIATIONS],
       displayFn: (item) => SIZES.ABBREVIATION_TO_FULL.A(item.data),
@@ -660,8 +661,8 @@ export const actions = {
 
     // region populate filters
     if (!isExcluded) {
-      state.filters.source.addItem(char._fSources)
-      if (isValid(char._pCr)) state.filters.cr.addItem(char._pCr)
+      state.filters.source.addItem(char.__fSources)
+      if (isValid(char.__pCr)) state.filters.cr.addItem(char.__pCr)
       if (isValid(char._fLevel)) state.filters.level.addItem(char._fLevel)
       // this._strengthFilter.addItem(char.str)
       // this._dexterityFilter.addItem(char.dex)
@@ -672,7 +673,7 @@ export const actions = {
       state.filters.speed.addItem(char._fSpeed)
       char.ac.forEach((it) => state.filters.ac.addItem(it.ac || it))
       if (char.hp.average) state.filters.averageHitPoints.addItem(char.hp.average)
-      char._pTypes.tags.forEach((t) => state.filters.tag.addItem(t))
+      char.__pTypes.tags.forEach((t) => state.filters.tag.addItem(t))
 
       // MISC
       char._fMisc = char.legendary || char.legendaryGroup ? ['Legendary'] : []
@@ -713,8 +714,8 @@ export const actions = {
       data: {
         hash: mon._hash,
         source: mon.source,
-        type: mon._pTypes.asText.uppercaseFirst(),
-        crLevel: mon._fCrLevel,
+        type: mon.__pTypes.asText.uppercaseFirst(),
+        crLevel: mon.__fCrLevel,
         alias: (mon.alias || []).map((it) => `"${it}"`).join(','),
         uniqueId: mon.uniqueId ? mon.uniqueId : state._index
       }

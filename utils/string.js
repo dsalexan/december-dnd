@@ -1,11 +1,25 @@
 /* eslint-disable no-extend-native */
+
+function helper_uppercaseFirst(str) {
+  if (str.length === 0) return str
+  if (str.length === 1) return str.charAt(0).toUpperCase()
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 String.prototype.uppercaseFirst =
   String.prototype.uppercaseFirst ||
   function() {
     const str = this.toString()
-    if (str.length === 0) return str
-    if (str.length === 1) return str.charAt(0).toUpperCase()
-    return str.charAt(0).toUpperCase() + str.slice(1)
+    const splitted = str.split(' ')
+
+    return splitted
+      .map((s, index) => {
+        if (index === 0) {
+          const dashed = s.split('-')
+          return dashed.map(helper_uppercaseFirst).join('-')
+        } else return s
+      })
+      .join(' ')
   }
 
 String.prototype.lowercaseFirst =

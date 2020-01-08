@@ -1,5 +1,19 @@
 <template>
   <div :class="{ show: showMax }" class="dnd-hp">
+    <div v-if="selected" class="shortkey-buttons flex-column">
+      <v-btn v-shortkey="['-']" @shortkey="handleDamage" @click="handleDamage" small icon color="amber">
+        <v-icon small>mdi-minus</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['+']" @shortkey="handleHeal" @click="handleHeal" small icon color="amber">
+        <v-icon small>mdi-plus</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['h']" @shortkey="focusCurrentHP" @click="focusCurrentHP" small icon color="amber">
+        <v-icon small>mdi-heart</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['m']" @shortkey="focusMaximumHP" @click="focusMaximumHP" small icon color="amber">
+        <v-icon small>mdi-heart-multiple</v-icon>
+      </v-btn>
+    </div>
     <div v-if="showMax || !!value.temporary" :class="{ highlight: !!value.temporary }" class="temporary mr-2">
       <v-text-field
         v-show="showTemp"
@@ -31,48 +45,100 @@
         </v-btn>
       </div>
     </div>
-    <div class="current">
+    <div :style="showMax ? '' : 'margin-bottom: 28px;'" class="current">
       <div class="inputs mb-2">
-        <v-text-field
-          :value="value.current"
-          @input="debounced_onInput($event, 'current')"
-          @keyup="onKeyUp($event, 'current')"
-          placeholder="?"
-          solo
-          dense
-        ></v-text-field>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <v-text-field
+              ref="current-hp"
+              :value="value.current"
+              @input="debounced_onInput($event, 'current')"
+              @keyup="onKeyUp($event, 'current')"
+              @focus="focused_current_hp = true"
+              @blur="focused_current_hp = false"
+              v-on="on"
+              placeholder="?"
+              solo
+              dense
+            ></v-text-field>
+          </template>
+          <span>Current HP (H)</span>
+        </v-tooltip>
+
         <template v-if="showMax">
           <div class="bar">/</div>
-          <v-text-field
-            :value="value.total"
-            @input="debounced_onInput($event, 'total')"
-            @keyup="onKeyUp($event, 'total')"
-            class="total"
-            placeholder="?"
-            solo
-            dense
-          ></v-text-field>
+
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on }">
+              <v-text-field
+                ref="maximum-hp"
+                :value="value.total"
+                @input="debounced_onInput($event, 'total')"
+                @keyup="onKeyUp($event, 'total')"
+                @focus="focused_maximum_hp = true"
+                @blur="focused_maximum_hp = false"
+                v-on="on"
+                class="total"
+                placeholder="?"
+                solo
+                dense
+              ></v-text-field>
+            </template>
+            <span>Maximum HP (M)</span>
+          </v-tooltip>
         </template>
       </div>
 
-      <v-btn
-        @click="showMax = !showMax"
-        :style="gradientHp"
-        light
-        x-small
-        depressed
-        class="overline grey--text text--darken-4 flex-grow-1"
-        style="width: 100%"
-        >{{ showMax ? 'Hit Points' : 'HP' }}</v-btn
-      >
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <v-btn
+            @click="showMax = !showMax"
+            v-on="on"
+            :style="gradientHp"
+            light
+            x-small
+            depressed
+            class="overline grey--text text--darken-4 flex-grow-1"
+            style="width: 100%"
+          >
+            {{ showMax ? 'Hit Points' : 'HP' }}
+          </v-btn>
+        </template>
+        <span>Show More (M)</span>
+      </v-tooltip>
 
       <div v-if="showMax" class="v-btn-group mt-2" style="width: 100%">
-        <v-btn @click="callDialog('current hp', 1, value.current)" x-small color="grey darken-3" depressed class="overline">
-          <v-icon x-small color="green">mdi-plus</v-icon>
-        </v-btn>
-        <v-btn @click="callDialog('current hp', -1, value.current)" x-small color="grey darken-3" depressed class="overline">
-          <v-icon x-small color="red">mdi-minus</v-icon>
-        </v-btn>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <v-btn
+              v-on="on"
+              @click="callDialog('current hp', 1, value.current)"
+              x-small
+              color="grey darken-3"
+              depressed
+              class="overline"
+            >
+              <v-icon x-small color="green">mdi-plus</v-icon>
+            </v-btn>
+          </template>
+          <span>Heal (+)</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <v-btn
+              v-on="on"
+              @click="callDialog('current hp', -1, value.current)"
+              x-small
+              color="grey darken-3"
+              depressed
+              class="overline"
+            >
+              <v-icon x-small color="red">mdi-minus</v-icon>
+            </v-btn>
+          </template>
+          <span>Deal Damage (-)</span>
+        </v-tooltip>
       </div>
     </div>
     <div v-if="showDeathSavingThrows && (showMax || !hideDeathSaves)" class="death-saving-throws ml-2">
@@ -128,7 +194,9 @@
         </v-card-title>
         <v-card-text>
           <v-text-field
+            ref="dialogInput"
             :label="(dialogSignal > 0 ? 'heal' : 'damage').toTitleCase()"
+            @keydown.enter="submitDialog"
             v-model="dialogValue"
             type="number"
             filled
@@ -144,8 +212,29 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="cancelDialog()" small color="red darken-1" text>Cancel</v-btn>
-          <v-btn @click="submitDialog()" small color="green darken-1" text>Confirm</v-btn>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on }">
+              <v-btn
+                v-if="dialog"
+                v-shortkey="['esc']"
+                @shortkey="cancelDialog"
+                @click="cancelDialog()"
+                v-on="on"
+                small
+                color="red darken-1"
+                text
+              >
+                Cancel
+              </v-btn>
+            </template>
+            <span>ESC</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on }">
+              <v-btn @click="submitDialog()" v-on="on" small color="green darken-1" text>Confirm</v-btn>
+            </template>
+            <span>Enter</span>
+          </v-tooltip>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -194,10 +283,18 @@ export default {
           DEATH_SAVING_THROWS.UNKNOWN
         ]
       })
+    },
+    selected: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
+      // shortkey
+      focused_current_hp: false,
+      focused_maximum_hp: false,
+      // others
       showTemp: !!this.value.temporary,
       showMax: false,
       hideDeathSaves: false,
@@ -261,6 +358,19 @@ export default {
       })
     }
   },
+  watch: {
+    selected(newVal, oldVal) {
+      if (!newVal && oldVal) {
+        if (this.focused_current_hp) {
+          this.blurCurrentHP()
+        }
+
+        if (this.focused_maximum_hp) {
+          this.blurMaximumHP()
+        }
+      }
+    }
+  },
   created() {
     this.debounced_onInput = _.debounce(
       function(event, key = 'current') {
@@ -276,6 +386,10 @@ export default {
       this.dialogCurrent = current
       this.dialogSignal = signal
       this.dialogTitle = model
+
+      setTimeout(() => {
+        this.$refs.dialogInput.$refs.input.focus()
+      }, 100)
     },
     cancelDialog() {
       this.dialog = false
@@ -298,28 +412,68 @@ export default {
         index,
         DEATH_SAVING_THROWS.PROGRESSION[this.$props.value.death_saving_throw[index]]
       )
+      this.handleChange()
     },
     resetDeathSaves() {
       for (let i = 0; i < 5; i++) {
         this.$set(this.$props.value.death_saving_throw, i, DEATH_SAVING_THROWS.UNKNOWN)
       }
+      this.handleChange()
     },
     onInput(event, key = 'current') {
       if (key === 'current') {
         if (!isValid(this.$props.value.total)) this.$set(this.$props.value, 'total', int(event, undefined))
       }
       this.$set(this.$props.value, key, int(event, undefined))
+      this.handleChange()
     },
     onKeyUp(event, key = 'current') {
       const add = event.code === 'ArrowUp' ? +1 : event.code === 'ArrowDown' ? -1 : undefined
 
       if (add === undefined) return
 
-      // console.log('ON KEY UP', key, add)
+      // info('ON KEY UP', key, add)
       this.$set(this.$props.value, key, this.$props.value[key] + add * 10 ** +!!event.shiftKey)
       // this.$emit('input', {
       //   add
       // })
+      this.handleChange()
+    },
+    handleChange() {
+      this.$emit('change')
+    },
+    handleDamage() {
+      this.callDialog('current hp', -1, this.$props.value.current)
+    },
+    handleHeal() {
+      this.callDialog('current hp', 1, this.$props.value.current)
+    },
+    focusCurrentHP() {
+      this.$refs['current-hp'].$refs.input.focus()
+      this.focused_current_hp = true
+    },
+    blurCurrentHP() {
+      this.$refs['current-hp'].$refs.input.blur()
+      this.focused_current_hp = false
+    },
+    focusMaximumHP() {
+      if (this.showMax === false) this.showMax = true
+      else if (this.focused_maximum_hp) this.showMax = false
+
+      setTimeout(() => {
+        if (this.showMax) {
+          this.$refs['maximum-hp'].$refs.input.focus()
+          this.focused_maximum_hp = true
+        } else {
+          this.focusCurrentHP()
+        }
+      }, 200)
+    },
+    blurMaximumHP() {
+      if (this.$refs['maximum-hp']) {
+        this.$refs['maximum-hp'].$refs.input.blur()
+        this.focused_maximum_hp = false
+      }
     }
   }
 }

@@ -1,7 +1,15 @@
 <template>
   <div :class="{ hidden: !visible && !editable }" class="v-tags d-inline-flex flex-row align-center flex-wrap">
+    <div v-if="selected" class="shortkey-buttons flex-row">
+      <v-btn v-shortkey="['space']" @shortkey="show = !show" @click="show = !show" small icon color="amber">
+        <v-icon small>mdi-{{ show ? 'arrow-expand-left' : 'arrow-expand-right' }}</v-icon>
+      </v-btn>
+      <v-btn v-shortkey="['enter']" @shortkey="show = !show" @click="show = !show" small icon color="amber">
+        <v-icon small>mdi-{{ show ? 'arrow-expand-left' : 'arrow-expand-right' }}</v-icon>
+      </v-btn>
+    </div>
     <div class="v-btn-group mr-2">
-      <v-btn @click="show = !show" :color="!highlight ? 'grey darken-2' : 'grey lighten-2'" light depressed x-small class="mb-2">
+      <v-btn @click="show = !show" :color="color" light depressed x-small class="mb-2">
         <span class="text-uppercase overline font-weight-medium" style="letter-spacing: 0.0892857143em !important;">{{
           title
         }}</span></v-btn
@@ -83,6 +91,7 @@ import _ from 'lodash'
 import generatorVue from '../forms/generator.vue'
 import { isValid } from '../../utils/value'
 import { vueSet } from '../../utils/object'
+import { info } from '../../utils/debug'
 import VTagVue from './VTag.vue'
 
 export default {
@@ -118,6 +127,10 @@ export default {
     source: {
       type: Object,
       default: () => undefined
+    },
+    selected: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -130,6 +143,13 @@ export default {
     }
   },
   computed: {
+    color() {
+      if (this.highlight) {
+        return this.selected ? 'amber darken-1' : 'grey lighten-2'
+      } else {
+        return this.selected ? '#fff8e0a3' : 'grey darken-2'
+      }
+    },
     preprocessed_value() {
       return this.show ? this.$props.preprocessor(this.$props.value) : []
     },
@@ -164,15 +184,15 @@ export default {
     isValid,
     onInput(path, value, item) {
       this.$emit('input', { path, value, item })
-      // console.log('ON INPUT', path, value, item)
+      // info('ON INPUT', path, value, item)
     },
     onRemove(item) {
       // this.$emit('input', { path: [], value: undefined, item })
-      console.log('ON REMOVE', item)
+      info('ON REMOVE', item)
     },
     onAddInput({ path = [], value, item }) {
       vueSet(this, ['addModel', ...path], value)
-      // console.log('ON ADD INPUT', path, value, item, 'RESULT', this.addModel)
+      // info('ON ADD INPUT', path, value, item, 'RESULT', this.addModel)
     },
     submitAddDialog() {
       this.dialog = false

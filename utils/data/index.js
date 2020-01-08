@@ -14,9 +14,9 @@ async function fetch(url) {
         const request = new XMLHttpRequest()
         request.open('GET', url, true)
         request.overrideMimeType('application/json')
-        // console.log('REQUEST', url)
+        // info('REQUEST', url)
         request.onload = () => {
-          // console.log('REQUEST LOADED', url, request)
+          // info('REQUEST LOADED', url, request)
           try {
             ADAPTER.loaded(url, JSON.parse(request.response))
             resolve()

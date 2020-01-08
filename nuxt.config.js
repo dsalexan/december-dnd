@@ -30,14 +30,15 @@ export default {
   /*
    ** Plugins to load before mounting the App
    */
-  plugins: ['~/plugins/toast.js', '~/plugins/string.js'],
+  plugins: ['~/plugins/toast.js', '~/plugins/string.js', { src: '~/plugins/shortkey.js', mode: 'client' }],
   /*
    ** Nuxt.js dev-modules
    */
   buildModules: [
     // Doc: https://github.com/nuxt-community/eslint-module
     '@nuxtjs/eslint-module',
-    '@nuxtjs/vuetify'
+    '@nuxtjs/vuetify',
+    '@nuxtjs/moment'
   ],
   /*
    ** Nuxt.js modules
@@ -53,7 +54,13 @@ export default {
    ** Axios module configuration
    ** See https://axios.nuxtjs.org/options
    */
-  axios: {},
+  axios: {
+    // baseURL: 'http://63de7184.ngrok.io'
+    baseURL: 'http://localhost:5000'
+  },
+  moment: {
+    locales: ['pt-BR']
+  },
   /*
    ** vuetify module configuration
    ** https://github.com/nuxt-community/vuetify-module

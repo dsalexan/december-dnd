@@ -100,8 +100,8 @@
             <v-tab v-if="editable && editable.value" href="#tab-value">Value</v-tab>
             <v-tab v-for="(t, index) in template" :key="index" :href="`#tab-template${index}`">Template {{ index }}</v-tab>
 
-            <v-tab-item v-for="(tab, tIndex) in form_tabs" :key="tIndex" :value="`tab-${tab.name}`" class="mt-2">
-              <form-generator :value="tab.value" :template="tab.form" :label="label" @input="onInput"></form-generator>
+            <v-tab-item v-for="(ftab, tIndex) in form_tabs" :key="tIndex" :value="`tab-${ftab.name}`" class="mt-2">
+              <form-generator :value="ftab.value" :template="ftab.form" :label="label" @input="onInput"></form-generator>
             </v-tab-item>
           </v-tabs>
         </v-card-text>

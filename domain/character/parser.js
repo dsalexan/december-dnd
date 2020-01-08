@@ -17,12 +17,17 @@ import '@/utils/string'
  * @returns {CreatureType} Type object from json, INJECTED with asText property
  */
 export function CreatureTypeText(type) {
-  const out = { type: '', tags: [], asText: '' }
+  const out = { type: [], tags: [], asText: '' }
 
   if (typeof type === 'string') {
     // handles e.g. "fey"
-    out.type = type
+    out.type.push = type
     out.asText = type.uppercaseFirst()
+    return out
+  } else if (_.isArray(type)) {
+    // handles e.g. "fey"
+    out.type = type
+    out.asText = type.join(', ').uppercaseFirst()
     return out
   }
 
@@ -40,14 +45,14 @@ export function CreatureTypeText(type) {
       }
     }
   }
-  out.type = type.type
+  out.type = _.isArray(type.type) ? type.type : [type.type]
   if (type.swarmSize) {
     out.tags.push('swarm')
-    out.asText = `swarm of ${ABBREVIATION_TO_FULL.SIZES.A(type.swarmSize).toLowerCase()} ${SINGULAR_TO_PLURAL.CREATURE_TYPES.A(
-      type.type
-    )}`
+    out.asText = `swarm of ${ABBREVIATION_TO_FULL.SIZES.A(type.swarmSize).toLowerCase()} ${type.type
+      .map(SINGULAR_TO_PLURAL.CREATURE_TYPES.A)
+      .join('/')}`
   } else {
-    out.asText = `${type.type.uppercaseFirst()}`
+    out.asText = `${out.type.map((t) => t.uppercaseFirst()).join('/')}`
   }
   if (tempTags.length) out.asText += ` (${tempTags.join(', ')})`
   return out
