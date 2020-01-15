@@ -1,10 +1,9 @@
 import _ from 'lodash'
 
+import { toNumber as crToNumber } from '../domain/system/cr'
+import { LIST_ABILITIES } from '../domain/system/constants/abilities'
+import { ABILITIES } from '../domain/system/constants'
 import { NUMBER_CLEAN_REGEXP } from './regex'
-
-import { toNumber as crToNumber } from './system/cr'
-import { LIST_ABILITIES } from './system/constants/abilities'
-import { ABILITIES } from './system/constants'
 // eslint-disable-next-line no-unused-vars
 import { info } from './debug'
 import { creatureLevel } from '~/domain/character'

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
-import { sortLower } from '../sort'
-import { warn } from '../debug'
+import { sortLower } from '../../utils/sort'
+import { warn } from '../../utils/debug'
 import { SKILLS } from './constants'
 import { render } from '@/services/renderer/render'
 
@@ -43,6 +43,7 @@ export function skillProficienciesToFull(skillProficiencies) {
     if (baseStack.length && chooseStack.length) return `${base}; and ${choose}`
     else if (baseStack.length) return base
     else if (chooseStack.length) return choose
+    return baseStack
   }
 
   return skillProficiencies.map(renderSingle).join(' <i>or</i> ')

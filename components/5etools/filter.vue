@@ -8,7 +8,14 @@
         <v-icon right>mdi-filter</v-icon>
       </v-btn>
 
-      <v-text-field :suffix="searchSize" @input="doSearch" small prepend-inner-icon="mdi-magnify" solo dark></v-text-field>
+      <v-text-field
+        :suffix="searchSize"
+        @input="debounced_doSearch"
+        small
+        prepend-inner-icon="mdi-magnify"
+        solo
+        dark
+      ></v-text-field>
 
       <v-btn small>
         <v-icon>mdi-shuffle</v-icon>
@@ -275,6 +282,14 @@ export default {
     summaries() {
       return Object.values(this.filters)
     }
+  },
+  created() {
+    this.debounced_doSearch = _.debounce(
+      function(event) {
+        if (event.length >= 3) this.doSearch(event)
+      }.bind(this),
+      500
+    )
   },
   mounted() {
     if (this.is.inited) return

@@ -36,7 +36,8 @@ export const CHARACTER_DEFAULT = {
     _rolls: {
       initiative: true
     },
-    remove: false
+    remove: false,
+    permission: false
   },
   view: {
     initiative: true,
@@ -54,6 +55,7 @@ export const CHARACTER_DEFAULT = {
     },
     // tags: false,
     tags: {
+      proficiency_bonus: true,
       size: true,
       speed: true,
       saves: true,
@@ -65,7 +67,8 @@ export const CHARACTER_DEFAULT = {
       senses: true,
       languages: true,
       spellcasting: true,
-      _conditions: true
+      _conditions: true,
+      feats: true
     },
     _hp: true,
     // _roll: false,
@@ -115,10 +118,15 @@ export const CHARACTER_ADMIN = extend('character', {
 
 export const GLOBAL_DEFAULT = {
   view: {
+    reload: false,
     edit: false,
     debug: false,
     add: false,
     initiative: false,
+    tracker: {
+      selector: false,
+      manager: false
+    },
     pages: {
       tracker: true,
       editor: false,

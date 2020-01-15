@@ -9,11 +9,11 @@
 // ************************************************************************* //
 import _ from 'lodash'
 
+import { LEVEL, ABILITIES, SKILLS, SENSES, CR } from '../domain/system'
+import { SOURCES, ATTACK } from '../domain/system/constants'
 import { sort } from './sort'
 import { encodeForHash, HASH_BUILDER } from './data/url'
 import { PAGES } from './data/constants'
-import { LEVEL, ABILITIES, SKILLS, SENSES, CR } from './system'
-import { SOURCES, ATTACK } from './system/constants'
 import { parseNumberRange } from './number'
 import { sourceJSONToFull, sourceJSONToAbv, isNonstandardSource, sourceJSONToColor } from '~/domain/source'
 import StrUtil from '@/utils/string'
@@ -849,7 +849,7 @@ function Renderer() {
         tempList.items.push({ type: 'itemSpell', name: `At will:`, entry: entry.will.join(', ') })
       if (entry.rest && !hidden.has('rest')) {
         for (let lvl = 9; lvl > 0; lvl--) {
-          const rest = entry.rest
+          const { rest } = entry
           if (rest[lvl]) tempList.items.push({ type: 'itemSpell', name: `${lvl}/rest:`, entry: rest[lvl].join(', ') })
           const lvlEach = `${lvl}e`
           if (rest[lvlEach])
@@ -858,7 +858,7 @@ function Renderer() {
       }
       if (entry.daily && !hidden.has('daily')) {
         for (let lvl = 9; lvl > 0; lvl--) {
-          const daily = entry.daily
+          const { daily } = entry
           if (daily[lvl]) tempList.items.push({ type: 'itemSpell', name: `${lvl}/day:`, entry: daily[lvl].join(', ') })
           const lvlEach = `${lvl}e`
           if (daily[lvlEach])
@@ -867,7 +867,7 @@ function Renderer() {
       }
       if (entry.weekly && !hidden.has('weekly')) {
         for (let lvl = 9; lvl > 0; lvl--) {
-          const weekly = entry.weekly
+          const { weekly } = entry
           if (weekly[lvl]) tempList.items.push({ type: 'itemSpell', name: `${lvl}/week:`, entry: weekly[lvl].join(', ') })
           const lvlEach = `${lvl}e`
           if (weekly[lvlEach])
@@ -884,7 +884,7 @@ function Renderer() {
         if (spells) {
           let levelCantrip = `${LEVEL.spLevelToFull(lvl)}${lvl === 0 ? 's' : ' level'}`
           let slotsAtWill = ` (at will)`
-          const slots = spells.slots
+          const { slots } = spells
           if (slots >= 0) slotsAtWill = slots > 0 ? ` (${slots} slot${slots > 1 ? 's' : ''})` : ``
           if (spells.lower && spells.lower !== lvl) {
             levelCantrip = `${LEVEL.spLevelToFull(spells.lower)}-${levelCantrip}`
@@ -1838,6 +1838,7 @@ function Renderer() {
       }
     }
 
+    // TODO: Decide how to deal with INTERNAL/EXTERNAL
     textStack[0] += `<a href="${href}" ${
       entry.href.type === 'internal' ? '' : `target="_blank" rel="noopener"`
     } ${this._renderLink_getHoverString(entry)} ${this._getHooks('link', 'ele')
@@ -2695,7 +2696,7 @@ Renderer.feat = {
           abbArr.push(`Increase your ${Parser.attAbvToFull(ab)} score by ${abilityObj[ab]}${TO_MAX_OF_TWENTY}`)
         )
       } else {
-        const choose = abilityObj.choose
+        const { choose } = abilityObj
         if (choose.from.length === 6) {
           if (choose.textreference) {
             // only used in "Resilient"
@@ -2704,8 +2705,8 @@ Renderer.feat = {
             abbArr.push(`Increase one ability score of your choice by ${choose.amount}${TO_MAX_OF_TWENTY}`)
           }
         } else {
-          const from = choose.from
-          const amount = choose.amount
+          const { from } = choose
+          const { amount } = choose
           const abbChoices = []
           for (let j = 0; j < from.length; ++j) {
             abbChoices.push(Parser.attAbvToFull(from[j]))
@@ -3948,9 +3949,9 @@ Renderer.monster = {
       if (fluff._copy) {
         const cpy = _.cloneDeep(fluffJson.monster.find((it) => fluff._copy.name === it.name && fluff._copy.source === it.source))
         // preserve these
-        const name = fluff.name
+        const { name } = fluff
         const src = fluff.source
-        const images = fluff.images
+        const { images } = fluff
 
         // remove this
         delete fluff._copy
@@ -4502,7 +4503,7 @@ Renderer.item = {
     }
 
     function createSpecificVariant(baseItem, genericVariant) {
-      const inherits = genericVariant.inherits
+      const { inherits } = genericVariant
       const specificVariant = _.cloneDeep(baseItem)
       if (baseItem.source !== SOURCES.CODE.PHB && baseItem.source !== SOURCES.CODE.DMG) {
         Renderer.item._initFullEntries(specificVariant)
@@ -6528,8 +6529,8 @@ Renderer.dice = {
     const $ele = $(ele)
     const rollData = $ele.data('packed-dice')
     let name = $ele.attr('title') || null
-    let shiftKey = evt.shiftKey
-    let altKey = evt.altKey
+    let { shiftKey } = evt
+    let { altKey } = evt
 
     const options = rollData.toRoll
       .split(';')

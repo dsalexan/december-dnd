@@ -8,16 +8,23 @@ const logIgnore = not.extend('ignore')
 
 export const state = () => ({
   client: undefined,
-  ignore: []
+  ignore: [],
+  notificationCallback: undefined
 })
 
 export const actions = {
-  init({ state }) {
+  init({ state }, { notificationCallback }) {
     state.client = new Pusher('605e2e08d813deb91748', {
       cluster: 'us2'
     })
 
     state.client.subscribe('december')
+    state.notificationCallback = notificationCallback
+  },
+  destroy({ state }) {
+    if (state.client === undefined) return
+    state.client.unsubscribe('december')
+    state.client = undefined
   },
   handleResponse({ state }, response) {
     if (isValid(response.ignore)) {
@@ -37,12 +44,16 @@ export const actions = {
 
       if (!state.ignore.includes(data.hash)) {
         callback(data)
+        state.notificationCallback && state.notificationCallback(data)
       } else {
         logIgnore(`(${data.hash}) ${event}`)
         // se bater uma resposta de notificaçao que é para ser ignorada, ignora
         // mas daqui a 5 minutos, remove a hash da lista de ignorados
         setTimeout(() => {
-          state.ignore.splice(state.ignore.findIndex(data.hash), 1)
+          state.ignore.splice(
+            state.ignore.findIndex((i) => i === data.hash),
+            1
+          )
           logIgnore(`Removing hash (${data.hash}) from index`)
         }, 5 * 60 * 1000)
       }

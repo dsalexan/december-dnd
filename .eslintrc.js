@@ -28,6 +28,9 @@ module.exports = {
         code: 130
       }
     ],
+    'prefer-destructuring': 'error',
+    'radix': 'off',
+    'consistent-return': 'error',
     'vue/name-property-casing': 'off'
   }
 }

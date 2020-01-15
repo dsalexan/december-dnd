@@ -82,11 +82,11 @@ export default {
 
         if (images[0].href) {
           if (images[0].href.type === 'custom') {
-            return `characters/${images[0].href.path}`
+            return `characters/${images[0].href.path || images[0].href.url}`
           } else if (images[0].href.type === 'internal') {
             return `img/${images[0].href.path}`
           } else {
-            return images[0].href.path
+            return images[0].href.url
           }
         } else {
           throw new Error('No HREF property in image')

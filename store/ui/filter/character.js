@@ -17,14 +17,16 @@ import {
 } from '~/domain/source'
 import { creatureLevel } from '~/domain/character'
 
-import { SIZES, DAMAGE, SENSES, SKILLS, ABILITIES, ALIGNMENT, CHARACTER, SPELLCASTING, CR } from '~/utils/system/constants'
-import { LIST_CR } from '~/utils/system/constants/cr'
-import { LIST_CONDITIONS } from '~/utils/system/constants/conditions'
+import { SIZES, DAMAGE, SENSES, SKILLS, ABILITIES, ALIGNMENT, CHARACTER, SPELLCASTING, CR } from '~/domain/system/constants'
+import { LIST_CR } from '~/domain/system/constants/cr'
+import { LIST_CONDITIONS } from '~/domain/system/constants/conditions'
 
-import { toNumber as CRtoNumber } from '~/utils/system/cr'
-import { abbreviationToFull } from '~/utils/system/alignment'
+import { toNumber as CRtoNumber } from '~/domain/system/cr'
+import { abbreviationToFull } from '~/domain/system/alignment'
 import { isValid } from '~/utils/value'
 import { info, error, warn } from '~/utils/debug'
+
+import { makeLoadSource } from '~/services/multisource'
 
 const log = info.extend('filter:character')
 
@@ -102,8 +104,9 @@ export const mutations = {
 
     filter.groups.splice(0, filter.groups.length)
   },
-  addItem(state, { key, item }) {
+  addItem(state, { key, item, fn }) {
     const filter = state.filters[key]
+    const { changeFn } = fn
 
     if (!isValid(item)) {
       error('ADD ITEM', key, item)
@@ -121,7 +124,9 @@ export const mutations = {
       group: group.key,
       state: STATES.INACTIVE,
       toogleState() {
+        const oldState = this.state
         this.state = STATES_PROGRESSION[this.state]
+        changeFn(STATES_PROGRESSION[this.state], oldState, this, filter)
       }
     })
 
@@ -437,7 +442,7 @@ export const actions = {
 
     return { sources: loadedSources, languages }
   },
-  async init({ state, dispatch, commit }) {
+  async init({ state, dispatch, commit, rootState }) {
     const build = dispatch('build')
     const load = dispatch('load')
 
@@ -446,7 +451,11 @@ export const actions = {
     // ADD FIRST LEVEL FILTERS
     Object.keys(loadResponse.sources)
       // .map(src => new FilterItem({item: src, changeFn: loadSource(JSON_LIST_NAME, addMonsters)}))
-      .forEach((fi) => state.filters.source.addItem(fi))
+      .forEach((fi) =>
+        state.filters.source.addItem(fi, {
+          changeFn: makeLoadSource(rootState.tools.bestiary.loaded, 'monster', (data) => dispatch('addMonsters', { data }))
+        })
+      )
 
     Object.keys(loadResponse.languages).forEach((key) => state.filters.language.addItem(key))
 
@@ -534,12 +543,12 @@ export const actions = {
       items: {},
       groups: [],
       value: value !== undefined ? value : model.min === undefined || model.max === undefined ? [] : [model.min, model.max],
-      addItem: (_item) => {
-        function _helper(item) {
+      addItem: (_item, { changeFn }) => {
+        function _helper(item, fn) {
           if (item === null || item === undefined) return
           if (Array.isArray(item)) item.forEach((it) => _helper(it))
           else {
-            commit('addItem', { key, item })
+            commit('addItem', { key, item, fn })
           }
           // else if (!this._items.find((it) => Filter._isItemsEqual(it, item))) {
           //   item = item instanceof FilterItem ? item : new FilterItem({ item })
@@ -551,7 +560,7 @@ export const actions = {
           // }
         }
 
-        _helper(_item)
+        _helper(_item, { changeFn })
       },
       clear: () => commit('clear', { key }),
       toogleMultiple() {
@@ -670,34 +679,34 @@ export const actions = {
       // this._intelligenceFilter.addItem(char.int)
       // this._wisdomFilter.addItem(char.wis)
       // this._charismaFilter.addItem(char.cha)
-      state.filters.speed.addItem(char._fSpeed)
+      state.filters.speed.addItem(char.__fSpeed)
       char.ac.forEach((it) => state.filters.ac.addItem(it.ac || it))
       if (char.hp.average) state.filters.averageHitPoints.addItem(char.hp.average)
       char.__pTypes.tags.forEach((t) => state.filters.tag.addItem(t))
 
       // MISC
-      char._fMisc = char.legendary || char.legendaryGroup ? ['Legendary'] : []
-      if (char.familiar) char._fMisc.push('Familiar')
-      if (char.type.swarmSize) char._fMisc.push('Swarm')
+      char.__fMisc = char.legendary || char.legendaryGroup ? ['Legendary'] : []
+      if (char.familiar) char.__fMisc.push('Familiar')
+      if (char.type.swarmSize) char.__fMisc.push('Swarm')
       if (char.spellcasting) {
-        char._fMisc.push('Spellcaster')
+        char.__fMisc.push('Spellcaster')
         char.spellcasting.forEach((sc) => {
-          if (sc.ability) char._fMisc.push(`Spellcaster, ${ABILITIES.ABBREVIATIONS_TO_FULL.A(sc.ability)}`)
+          if (sc.ability) char.__fMisc.push(`Spellcaster, ${ABILITIES.ABBREVIATIONS_TO_FULL.A(sc.ability)}`)
         })
       }
-      if (char.isNpc) char._fMisc.push('Adventure NPC')
+      if (char.isNpc) char.__fMisc.push('Adventure NPC')
       if (char.legendaryGroup && (reference('meta', char.legendaryGroup.source) || {})[char.legendaryGroup.name]) {
         if ((reference('meta', char.legendaryGroup.source) || {})[char.legendaryGroup.name].lairActions)
-          char._fMisc.push('Lair Actions')
+          char.__fMisc.push('Lair Actions')
         if ((reference('meta', char.legendaryGroup.source) || {})[char.legendaryGroup.name].regionalEffects)
-          char._fMisc.push('Regional Effects')
+          char.__fMisc.push('Regional Effects')
       }
-      if (char.reaction) char._fMisc.push('Reactions')
-      if (char.variant) char._fMisc.push('Has Variants')
-      if (char.miscTags) char._fMisc.push(...char.miscTags)
-      if (char._isCopy) char._fMisc.push('Modified Copy')
-      if (char.altArt) char._fMisc.push('Has Alternate Token')
-      if (char.srd) char._fMisc.push('SRD')
+      if (char.reaction) char.__fMisc.push('Reactions')
+      if (char.variant) char.__fMisc.push('Has Variants')
+      if (char.miscTags) char.__fMisc.push(...char.miscTags)
+      if (char._isCopy) char.__fMisc.push('Modified Copy')
+      if (char.altArt) char.__fMisc.push('Has Alternate Token')
+      if (char.srd) char.__fMisc.push('SRD')
 
       state.filters.traits.addItem(char.traitTags)
       state.filters.actionsReactions.addItem(char.actionTags)

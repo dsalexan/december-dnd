@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
-import { int, bool, isValid } from '../value'
-import { warn } from '../debug'
+import { int, bool, isValid } from '../../utils/value'
+import { warn } from '../../utils/debug'
 import cr from './cr'
 import xp from './xp'
 import level from './level'

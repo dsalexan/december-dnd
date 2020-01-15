@@ -1,7 +1,8 @@
 <template>
   <v-list-item
-    :class="{ 'view-false': !VIEW(), 'zIndex-1000': avatarOverlay }"
-    :style="selected ? 'background: #343434;' : ' opacity: 0.95'"
+    :class="{ 'view-false': !VIEW(), 'zIndex-1000': avatarOverlay, hidden }"
+    :style="`${selected ? 'background: #343434;' : ' opacity: 0.95'}; position: relative;`"
+    @click.native="onClick"
     class="dnd-initiative-tracker-item"
   >
     <!-- {{ selected }} -->
@@ -11,7 +12,13 @@
     >
       <v-tooltip right>
         <template v-slot:activator="{ on }">
-          <v-btn v-on="on" @click="handleColorBarClick" :color="color" class="color-bar" depressed></v-btn>
+          <v-btn
+            v-on="on"
+            @click="PERMISSIONS.EDIT ? handleColorBarClick : () => {}"
+            :color="color"
+            class="color-bar"
+            depressed
+          ></v-btn>
         </template>
         <span>Press SHIFT to add/remove color identifier</span>
       </v-tooltip>
@@ -116,8 +123,12 @@
       style="min-width: 72px; margin-right: 32px;"
     >
       <v-avatar @click="avatarOverlay = !!avatar()" :color="!avatar() ? 'amber darken-1' : 'grey darken-4'" size="72">
-        <v-img v-if="avatar() && croppedAvatar() === undefined" :src="avatar()"></v-img>
-        <v-cropping-image v-else-if="avatar() && croppedAvatar()" :src="avatar()" :crop="croppedAvatar()"></v-cropping-image>
+        <v-img v-if="VIEW('avatar') && avatar() && croppedAvatar() === undefined" :src="avatar()"></v-img>
+        <v-cropping-image
+          v-else-if="VIEW('avatar') && avatar() && croppedAvatar()"
+          :src="avatar()"
+          :crop="croppedAvatar()"
+        ></v-cropping-image>
         <span v-else class="black--text headline d-flex align-center" style="height: 72px">{{
           VIEW('avatar') ? abreviattion(value.name) : '?'
         }}</span>
@@ -129,7 +140,7 @@
         @input="
           (event) => {
             value.ac[event.index].ac = event.value
-            handleChange()
+            handleChange('ac')
           }
         "
         placeholder="?"
@@ -149,7 +160,7 @@
 
     <v-list-item-content class="grid-main">
       <v-list-item-title class="title">
-        <div>
+        <div class="name">
           <span>{{ VIEW('name') ? value.name : '??' }}</span>
           <span v-if="VIEW('source')" class="grey--text subtitle-1 font-weight-black ml-3">{{ value.source }}</span>
         </div>
@@ -188,6 +199,17 @@
         </div>
         <div v-if="VIEW('tags')" class="tags mt-4 d-flex flex-row flex-wrap">
           <v-tags
+            v-if="VIEW('tags.proficiency_bonus')"
+            :value="[
+              {
+                value: profBonus(value, true)
+              }
+            ]"
+            :selected="selected_tag === 'proficiency_bonus'"
+            title="Proficiency Bonus"
+            label="Proficiency Bonus"
+          ></v-tags>
+          <v-tags
             v-if="VIEW('tags.size')"
             :editable="PERMISSIONS.EDIT && EDIT('tags.size')"
             :value="sizes(value.size)"
@@ -204,7 +226,7 @@
             @input="
               (event) => {
                 lodashSet(value.speed, [event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange('speed')
               }
             "
             :source="{
@@ -229,7 +251,7 @@
             @input="
               (event) => {
                 lodashSet(value.save, [event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange('save')
               }
             "
             :source="{
@@ -249,12 +271,12 @@
           <v-tags
             v-if="VIEW('tags.skills')"
             :editable="PERMISSIONS.EDIT && EDIT('tags.skills')"
-            :value="skills(value)"
+            :value="skills(value, true)"
             :selected="selected_tag === 'skills'"
             @input="
               (event) => {
                 lodashSet(value.skill, [event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange('skill')
               }
             "
             :source="{
@@ -284,7 +306,7 @@
             @input="
               (event) => {
                 lodashSet(value[immRes.key], [...event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange(immRes.key)
               }
             "
             :title="`DMG. ${immRes.title}`"
@@ -298,7 +320,7 @@
             @input="
               (event) => {
                 lodashSet(value.conditionImmune, [event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange('condition immunity')
               }
             "
             title="Condition Immunities"
@@ -316,7 +338,7 @@
                 } else {
                   lodashSet(value.senses, [event.item.key, ...event.path], event.value)
                 }
-                handleChange()
+                handleChange('senses')
               }
             "
             :source="{
@@ -342,7 +364,7 @@
             @input="
               (event) => {
                 lodashSet(value.languages, [event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange('languages')
               }
             "
             :source="{
@@ -365,7 +387,7 @@
             v-if="VIEW('tags.spellcasting')"
             :editable="PERMISSIONS.EDIT && EDIT('tags.spellcasting')"
             :value="spellcasting(casting, value)"
-            :selected="selected_tag === 'spellcasting'"
+            :selected="selected_tag === (casting.name || casting)"
             :title="casting.name"
             label="Spellcasting"
           ></v-tags>
@@ -377,7 +399,7 @@
             @input="
               (event) => {
                 lodashSet(value._conditions, [event.item.key, ...event.path], event.value)
-                handleChange()
+                handleChange('condition')
               }
             "
             :source="{
@@ -401,16 +423,45 @@
             title="Conditions"
             label="Condition"
           ></v-tags>
+          <v-tags
+            v-if="VIEW('tags.feats')"
+            :value="feats(value.feat)"
+            :selected="selected_tag === 'feats'"
+            title="Feats"
+            label="Feat"
+          ></v-tags>
         </div>
       </v-list-item-subtitle>
     </v-list-item-content>
 
     <v-list-item-action v-if="VIEW('_hp')" class="align-self-center grid-hp">
-      <dnd-hp :value="value._hp" @change="handleChange()" :selected="selected"></dnd-hp>
+      <dnd-hp :value="value._hp" @change="handleChange('hp')" :selected="selected"></dnd-hp>
     </v-list-item-action>
 
-    <v-list-item-action class="align-self-center grid-actions">
-      <v-tooltip v-if="VIEW('_rolls') && VIEW('_rolls.initiative') && GLOBAL_VIEW('initiative')" left>
+    <v-dialog v-model="permissionDialog">
+      <v-card>
+        <v-card-title class="title"><span class="grey--text mr-1">Permission</span>{{ value.name }}</v-card-title>
+        <v-card-text>
+          <v-select
+            :value="value._permission"
+            @change=""
+            :items="permissions['__CHARACTERS__']"
+            filled
+            label="Default"
+            dense
+            hide-details
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click="handlePermission(null)" color="red darken-1" text>Cancel</v-btn>
+          <v-btn @click="handlePermission(null)" color="green darken-1" text>Confirm</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-list-item-action class="control align-self-center grid-actions">
+      <v-tooltip v-if="!hidden && VIEW('_rolls') && VIEW('_rolls.initiative') && GLOBAL_VIEW('initiative')" left>
         <template v-slot:activator="{ on }">
           <v-hover v-slot:default="{ hover }">
             <v-btn
@@ -427,7 +478,7 @@
         <span>Roll Initiative (I)</span>
       </v-tooltip>
 
-      <v-tooltip v-if="PERMISSIONS.EDIT && EDIT('remove')" left>
+      <v-tooltip v-if="!hidden && PERMISSIONS.EDIT && EDIT('remove')" left>
         <template v-slot:activator="{ on }">
           <v-hover v-slot:default="{ hover }">
             <v-btn :color="hover ? 'red' : 'grey'" v-on="on" @click="handleRemove()" text icon>
@@ -437,7 +488,37 @@
         </template>
         <span>Remove Character</span>
       </v-tooltip>
+
+      <v-tooltip v-if="!hidden && PERMISSIONS.EDIT && EDIT('permission')" left>
+        <template v-slot:activator="{ on }">
+          <v-hover v-slot:default="{ hover }">
+            <v-btn :color="hover ? 'amber darken-2' : 'grey'" v-on="on" @click="permissionDialog = true" text icon>
+              <v-icon>mdi-key</v-icon>
+            </v-btn>
+          </v-hover>
+        </template>
+        <span>Permission</span>
+      </v-tooltip>
+
+      <v-tooltip left>
+        <template v-slot:activator="{ on }">
+          <v-hover v-slot:default="{ hover }">
+            <v-btn
+              :color="hover ? 'amber darken-2' : 'grey'"
+              v-on="on"
+              @click="hidden ? $emit('show') : $emit('hide')"
+              class="show-button"
+              text
+              icon
+            >
+              <v-icon>mdi-eye{{ hidden ? '' : '-off' }}</v-icon>
+            </v-btn>
+          </v-hover>
+        </template>
+        <span>{{ hidden ? 'Show' : 'Hide' }} Character</span>
+      </v-tooltip>
     </v-list-item-action>
+    <!-- <div style="background: red; width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></div> -->
   </v-list-item>
 </template>
 
@@ -458,7 +539,7 @@ import { LIST_ABBREVIATIONS } from '../../../utils/system/constants/abilities'
 import { LIST_SKILLS } from '../../../utils/system/constants/skills'
 import { LIST_CONDITIONS } from '../../../utils/system/constants/conditions'
 import { LIST_LANGUAGES } from '../../../utils/system/constants/languages'
-import { defaults, nestedValue } from '../../../utils/permissions'
+import { defaults, nestedValue, INDEX_DEFAULT } from '../../../utils/permissions'
 import VCroppingImageVue from '../../utils/VCroppingImage.vue'
 import { int, isValid } from '@/utils/value'
 import hpVue from '@/components/dnd/tracker/hp.vue'
@@ -466,6 +547,7 @@ import { modifier } from '@/utils/system'
 import VEditField from '@/components/utils/VEditField'
 
 import CHARACTER from '@/domain/character'
+import renderCharacter from '@/services/character/render'
 
 export default {
   components: {
@@ -495,12 +577,17 @@ export default {
     selected: {
       type: Boolean,
       default: false
+    },
+    hidden: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     if (!isValid(this.permissions)) this.permissions = defaults('character')
 
     return {
+      permissions: INDEX_DEFAULT,
       // shortkeys
       selected_tag: undefined,
       focused_initiative: false,
@@ -567,6 +654,14 @@ export default {
     tags() {
       const TAGS = [
         {
+          key: 'proficiency_bonus',
+          size: 1
+        },
+        {
+          key: 'size',
+          size: this.sizes(this.value.size).length
+        },
+        {
           key: 'speed',
           size: this.speed(this.value.speed).length
         },
@@ -576,7 +671,7 @@ export default {
         },
         {
           key: 'skills',
-          size: this.skills(this.value).length
+          size: this.skills(this.value, true).length
         },
         {
           key: 'vulnerable',
@@ -602,9 +697,20 @@ export default {
           key: 'languages',
           size: this.languages(this.value.languages).length
         },
+        ...[this.value.spellcasting]
+          .flat(1)
+          .filter((s) => s !== undefined)
+          .map((casting) => ({
+            key: casting.name,
+            size: 1
+          })),
         {
           key: '_conditions',
           size: this.conditions(this.value._conditions).length
+        },
+        {
+          key: 'feats',
+          size: (this.value.feats || []).length
         }
       ]
 
@@ -628,17 +734,19 @@ export default {
     lodashSet: vueSet,
     modifier,
     hasRolled: CHARACTER.hasRolled,
-    ac: CHARACTER.acToArray,
-    sizes: CHARACTER.sizeToArray,
-    speed: CHARACTER.speedToArray,
-    skills: CHARACTER.skillsToArray,
-    saves: CHARACTER.savesToArray,
-    senses: CHARACTER.sensesToArray,
-    languages: CHARACTER.languagesToArray,
-    immunitiesResistances: CHARACTER.immunitiesAndResistancesToArray,
-    conditionImmunities: CHARACTER.conditionImmunitiesToArray,
-    conditions: CHARACTER.conditionsToArray,
-    spellcasting: CHARACTER.spellcastingToArray,
+    profBonus: CHARACTER.creatureProficiencyBonus,
+    ac: renderCharacter.acToArray,
+    sizes: renderCharacter.sizeToArray,
+    speed: renderCharacter.speedToArray,
+    skills: renderCharacter.skillsToArray,
+    saves: renderCharacter.savesToArray,
+    senses: renderCharacter.sensesToArray,
+    languages: renderCharacter.languagesToArray,
+    immunitiesResistances: renderCharacter.immunitiesAndResistancesToArray,
+    conditionImmunities: renderCharacter.conditionImmunitiesToArray,
+    conditions: renderCharacter.conditionsToArray,
+    spellcasting: renderCharacter.spellcastingToArray,
+    feats: renderCharacter.featsToArray,
     abreviattion(name) {
       return name
         .split(' ')
@@ -683,7 +791,7 @@ export default {
     },
     // GENERAL
     rollInitiative() {
-      const name = this.$props.value.name
+      const { name } = this.$props.value
 
       const value = Math.floor(Math.random() * (20 - 1 + 1)) + 1
       this.$toast({
@@ -710,11 +818,11 @@ export default {
       } else {
         this.colorDialog = open
       }
-      this.handleChange()
+      this.handleChange('color bar')
     },
     handleColor(event) {
       this.$props.value._color = event
-      this.handleChange()
+      this.handleChange('color bar')
     },
     handleInitiativeRoll({ add, value }) {
       // this.set_initiative({ _id, value, add })
@@ -726,13 +834,13 @@ export default {
       if (add !== undefined) {
         this.$set(this.$props.value._rolls, 'initiative', this.$props.value._rolls.initiative + int(add, 0))
       }
-      this.handleChange()
+      this.handleChange('initiative')
     },
-    handleChange() {
-      this.$emit('change')
+    handleChange(action) {
+      this.$emit('change', { action })
     },
     handleRemove() {
-      const name = this.$props.value.name
+      const { name } = this.$props.value
 
       this.$toast({
         supportHTML: true,
@@ -765,6 +873,15 @@ export default {
       const nextIndex = value < 0 ? this.tags.length + value : value
 
       this.selected_tag = this.tags[nextIndex].key
+    },
+    onClick(event) {
+      if (event.altKey) {
+        this.$emit('click')
+      }
+    },
+    handlePermission(permission) {
+      this.$props.value._permission = permission
+      this.handleChange('permission')
     }
   }
 }
@@ -777,6 +894,16 @@ export default {
 .zIndex-1000
   z-index: 1000 !important
   opacity: 1 !important
+
+.hidden::v-deep
+  .v-list-item__avatar, .v-list-item__action:not(.control)
+    opacity: 0
+    pointer-events: none
+    height: 10px !important
+
+  .v-list-item__content
+    .v-list-item__subtitle, .v-list-item__title > *:not(.name)
+      display: none
 
 .dnd-initiative-tracker-item
   .v-edit-field::v-deep

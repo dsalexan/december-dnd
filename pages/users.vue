@@ -25,20 +25,14 @@
             {{ $moment(user.__last_session.timestamp).fromNow() }}
           </v-list-item-subtitle>
 
-          <v-expansion-panels depressed>
+          <v-expansion-panels depressed dense>
             <v-expansion-panel dense>
               <v-expansion-panel-header>
-                Permissions
+                Global
               </v-expansion-panel-header>
               <v-expansion-panel-content>
                 <v-tabs height="50" show-arrows>
                   <v-tab :href="`#tab-__GLOBAL__`">GLOBAL</v-tab>
-                  <v-tab v-for="character in characters" :key="character._id" :href="`#tab-${character._id}`">
-                    <div class="d-flex flex-column">
-                      <span>{{ character.name }}</span>
-                      <span class="caption">{{ character._id }}</span>
-                    </div>
-                  </v-tab>
 
                   <v-tab-item value="tab-__GLOBAL__">
                     <!-- {{ permission(user._id, '__GLOBAL__') }} -->
@@ -65,8 +59,36 @@
                       "
                     ></v-nested-switch>
                   </v-tab-item>
-                  <v-tab-item v-for="character in characters" :key="character._id" :value="`tab-${character._id}`">
-                    {{ permission(user._id, character._id) }}
+                </v-tabs>
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+            <v-expansion-panel v-for="tracker in trackers" :key="tracker._id" dense>
+              <v-expansion-panel-header>
+                <div>
+                  <span>{{ tracker.name }}</span>
+                  <span class="ml-2 caption grey--text">{{ tracker._id }}</span>
+                </div>
+              </v-expansion-panel-header>
+              <v-expansion-panel-content>
+                <v-tabs height="50" show-arrows>
+                  <v-tab
+                    v-for="character in sortedTrackerCharacters(tracker)"
+                    :key="character._id"
+                    :href="`#tab-${character._id}`"
+                  >
+                    <div class="d-flex flex-column">
+                      <span>{{ character.name }}</span>
+                      <span class="caption">{{ character._id }}</span>
+                    </div>
+                  </v-tab>
+
+                  <!-- {{ sortedTrackerCharacters(tracker) }} -->
+                  <v-tab-item
+                    v-for="character in sortedTrackerCharacters(tracker)"
+                    :key="character._id"
+                    :value="`tab-${character._id}`"
+                  >
+                    <!-- {{ permission(user._id, character._id) }} -->
                     <v-select
                       :items="permissions['__CHARACTER__']"
                       @change="
@@ -125,6 +147,12 @@ export default {
     ...mapState('characters', {
       characterIndex: 'index'
     }),
+    ...mapState('tracker', {
+      trackerIndex: 'index'
+    }),
+    ...mapState('characters', {
+      characterIndex: 'index'
+    }),
     ...mapGetters('users', {
       permission: 'permission',
       users: 'sorted'
@@ -134,6 +162,9 @@ export default {
     }),
     characters() {
       return Object.values(this.characterIndex).sort((a, b) => sort(a.name, b.name))
+    },
+    trackers() {
+      return Object.values(this.trackerIndex).sort((a, b) => sort(a.name, b.name))
     }
   },
   created() {
@@ -150,6 +181,11 @@ export default {
       // warn('Send user update through server not implemented', this.userIndex[_id].permissions)
       this.notifyUserPermissionUpdated({ user: _id, permissions: this.userIndex[_id].permissions })
       this.sendStack = this.sendStack.filter((id) => id !== _id)
+    },
+    sortedTrackerCharacters(tracker) {
+      return Object.values(this.characterIndex)
+        .filter((char) => tracker.characters.includes(char._id))
+        .sort((a, b) => sort(a.name, b.name))
     }
   }
 }

@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import Pusher from 'pusher-js'
 
 import { extend, defaults } from '~/utils/permissions'
 import { isValid } from '~/utils/value'
@@ -25,14 +24,12 @@ export const getters = {
 }
 
 export const actions = {
-  init({ dispatch, rootState }) {
-    rootState.pusher.client = new Pusher('605e2e08d813deb91748', {
-      cluster: 'us2'
-    })
-
-    rootState.pusher.client.subscribe('december')
-    // dispatch('pusher/init', undefined, { root: true })
+  async init({ dispatch, rootState }, { notificationCallback }) {
+    await dispatch('pusher/init', { notificationCallback }, { root: true })
     dispatch('subscribe')
+  },
+  async destroy({ dispatch, rootState }) {
+    await dispatch('pusher/destroy', undefined, { root: true })
   },
   subscribe({ state, dispatch, rootState }) {
     dispatch(
@@ -127,5 +124,9 @@ export const actions = {
     dispatch('ui/reset', undefined, { root: true })
 
     state.debug(`Me permissions updated`, permissions)
+  },
+  // SERVER SHIT
+  reloadGlobal() {
+    this.$axios.$get(`/reload`)
   }
 }

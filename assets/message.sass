@@ -1,6 +1,12 @@
 .m-message-wrapper
   .m-message
-    background: #424242
+    &:not(.light)
+      background: #424242
+
+      .m-message-content
+        .m-message--description
+          color: #EEE
+
 
     .m-message-icons
       display: none
@@ -8,7 +14,25 @@
     .m-message-content
       .m-message--description
         font-family: "Roboto", sans-serif !important
-        color: #EEE
 
         .grey
           color: #9E9E9E
+
+          &.lighten-5
+            color: #FAFAFA
+          &.lighten-4
+            color: #F5F5F5
+          &.lighten-3
+            color: #EEEEEE
+          &.lighten-2
+            color: #E0E0E0
+          &.lighten-1
+            color: #BDBDBD
+          &.darken-1
+            color: #757575
+          &.darken-2
+            color: #616161
+          &.darken-3
+            color: #424242
+          &.darken-4
+            color: #212121

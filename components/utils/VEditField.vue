@@ -41,6 +41,10 @@ export default {
     color: {
       type: String,
       default: 'amber darken-1'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {

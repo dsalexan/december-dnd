@@ -6,9 +6,9 @@ import MiscUtil from '@/utils/misc'
 import { sort } from '~/utils/sort'
 import { encodeForHash } from '~/utils/data/url'
 import { PAGES, LIVE_5E_TOOLS_URL as BASE_URL } from '~/utils/data/constants'
-import { SOURCES } from '~/utils/system/constants'
+import { SOURCES } from '~/domain/system/constants'
 // eslint-disable-next-line no-unused-vars
-import { SKILLS, SENSES, CR } from '~/utils/system'
+import { SKILLS, SENSES, CR } from '~/domain/system'
 
 // eslint-disable-next-line no-unused-vars
 const IMGUR_CLIENT_ID = `abdea4de492d3b0`

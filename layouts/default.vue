@@ -54,20 +54,50 @@
 
     <v-app-bar app clipped-left>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-toolbar-title>December</v-toolbar-title>
+      <!-- <v-toolbar-title class=".d-sm-none .d-md-flex">December</v-toolbar-title> -->
       <!-- <span class="ml-4">{{ IDLE ? 'IDLE' : 'ACTIVE' }}, LAST_ACTIVE: {{ LAST_ACTIVE }}</span> -->
+
+      <template v-if="'/tracker' === $route.path && GLOBAL_VIEW('tracker.selector')">
+        <v-select
+          @change="setTracker({ tracker: $event })"
+          :items="trackers"
+          :value="activeTracker._id"
+          dense
+          single-line
+          filled
+          label="Tracker"
+          hide-details
+          style="max-width: 200px"
+        ></v-select>
+      </template>
 
       <v-spacer></v-spacer>
 
+      <template v-if="'/tracker' === $route.path && round">
+        <span class="title">
+          <span class="mr-1 grey--text font-weight-regular">ROUND</span>
+          <span class="">{{ round }}</span>
+        </span>
+        <v-spacer></v-spacer>
+      </template>
+
+      <v-tooltip v-if="VIEW('reload')" left>
+        <template v-slot:activator="{ on }">
+          <v-btn @click="reloadApp()" v-on="on" :color="'amber darken-2'" icon hide-details>
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+        </template>
+        <span>Reload</span>
+      </v-tooltip>
       <v-tooltip v-if="VIEW('debug')" left>
         <template v-slot:activator="{ on }">
-          <v-btn @click="showStore()" v-on="on" :color="PERMISSIONS.EDIT ? 'amber darken-2' : 'grey'" icon hide-details>
+          <v-btn @click="showStore()" v-on="on" :color="'amber darken-2'" icon hide-details>
             <v-icon>mdi-bug</v-icon>
           </v-btn>
         </template>
         <span>Debug</span>
       </v-tooltip>
-      <v-tooltip v-if="VIEW('edit')" left>
+      <v-tooltip v-if="VIEW('edit') && '/tracker' === $route.path" left>
         <template v-slot:activator="{ on }">
           <v-btn @click="toogleEdit()" v-on="on" :color="PERMISSIONS.EDIT ? 'amber darken-2' : 'grey'" icon hide-details>
             <v-icon>mdi-pencil</v-icon>
@@ -125,6 +155,11 @@ export default {
     }
   },
   computed: {
+    ...mapGetters('tracker', {
+      trackerList: 'list',
+      round: 'round',
+      activeTracker: 'active'
+    }),
     ...mapState('ui', ['PERMISSIONS', 'IDLE', 'LAST_ACTIVE']),
     ...mapState(['_id']),
     ...mapGetters(['GLOBAL_PERMISSIONS', 'STORE']),
@@ -139,11 +174,52 @@ export default {
         const _nested = nestedValue(_.get(this.GLOBAL_PERMISSIONS.view || {}, path))
         return _nested === undefined ? true : _nested
       }
+    },
+    GLOBAL_VIEW() {
+      return (path) => {
+        if (path === undefined) {
+          if (this.GLOBAL_PERMISSIONS.view === undefined) return true
+          const nested = nestedValue(this.GLOBAL_PERMISSIONS.view)
+          return nested === undefined ? true : nested
+        }
+
+        const _nested = nestedValue(_.get(this.GLOBAL_PERMISSIONS.view || {}, path))
+        return _nested === undefined ? true : _nested
+      }
+    },
+    trackers() {
+      return this.trackerList.map((t) => ({
+        text: t.name,
+        value: t._id
+      }))
     }
+  },
+  beforeDestroy() {
+    this.destroy()
   },
   created() {
     // info('LAYOUT CREATED')
-    this.init()
+    this.init({
+      notificationCallback: ({ user, event, data }) => {
+        const { action } = data
+
+        let id = '' // NON SPECIFIED ID PROTOCOL FOR EVENT
+        if (event.includes('tracker:')) id = data.tracker._id || data.tracker
+        else if (event.includes('user:')) id = data.user._id || data.player || data.user
+        else if (event.includes('character:')) id = data.character._id || data.character
+
+        this.$toast({
+          supportHTML: true,
+          message: `<span class="grey">
+              <i>(${action === undefined ? event : `${event}::${action}`})</i> 
+              <span class="grey darken-1" style="margin: 0 5px">${user}</span>
+            </span> 
+            <b class="grey darken-2">${id}</b>`,
+          position: 'bottom-center',
+          className: 'light'
+        })
+      }
+    })
     this.uiInit()
     this.charactersInit()
 
@@ -156,6 +232,7 @@ export default {
       this.dialog = true
     } else {
       setData('player', player, 5, 'd')
+      this.$axios.setHeader('Authorization', player)
     }
 
     if (player) {
@@ -168,8 +245,9 @@ export default {
     this.handleActive()
   },
   methods: {
+    ...mapActions('tracker', ['setTracker']),
     ...mapMutations('ui', { toogleEdit: 'toogleEdit' }),
-    ...mapActions(['init', 'signIn', 'amOnline', 'amOffline']),
+    ...mapActions(['init', 'destroy', 'signIn', 'amOnline', 'amOffline', 'reloadGlobal']),
     ...mapActions('ui', { uiInit: 'init', setActive: 'setActive' }),
     ...mapActions('characters', { charactersInit: 'init' }),
     submitPlayerName() {
@@ -189,6 +267,9 @@ export default {
     },
     showStore() {
       info('vuex Store', this.STORE)
+    },
+    reloadApp() {
+      this.reloadGlobal()
     }
   }
 }

@@ -17,15 +17,55 @@
     <!-- CHARACTER_PERMISSIONS {{ characters_with_permissions }} -->
     <!-- <br /> -->
     <!-- GLOBAL_PERMISSIONS {{ VIEW() }} -->
+    <v-card v-if="GLOBAL_VIEW('tracker.manager')" tile color="grey darken-4">
+      <v-card-text v-if="showTrackerMenu">
+        <v-container>
+          <v-row no-gutters>
+            <v-col cols="12" sm="4">
+              <v-text-field
+                v-if="PERMISSIONS.EDIT"
+                v-model="max_round"
+                label="Maximum Round"
+                class="mt-0 pt-0"
+                dense
+                hide-details
+                type="number"
+                filled
+              ></v-text-field>
+              <v-slider
+                :value="round"
+                @change="setRound({ tracker: activeTracker._id, value: $event })"
+                :max="max_round"
+                class="mt-0 pt-0 align-center"
+                hide-details
+              >
+              </v-slider>
+              <div class="white--text" style="text-align: center; width: 100%;">{{ !round ? 'NO ROUND SPECIFIED' : round }}</div>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-card-text>
+      <v-card-actions class="pa-0">
+        <v-btn @click="showTrackerMenu = !showTrackerMenu" color="primary" block text>
+          <v-icon>mdi-chevron-{{ !showTrackerMenu ? 'down' : 'up' }}</v-icon>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+
     <v-list three-line>
       <dnd-list-item
         v-for="item in characters_with_permissions"
         :key="item.character._id"
+        :id="`item-${item.character._id}`"
         :value="item.character"
         :permission="item.permission"
         :selected="selected === item.character._id"
-        @change="onChange(item.character._id)"
+        :hidden="hidden.includes(item.character._id)"
+        @change="onChange(item.character._id, $event.action)"
         @remove="onRemove(item.character._id)"
+        @click="selected = item.character._id"
+        @hide="hidden.push(item.character._id)"
+        @show="() => (hidden = hidden.filter((h) => h !== item.character._id))"
       ></dnd-list-item>
     </v-list>
 
@@ -112,8 +152,13 @@ export default {
   data() {
     return {
       fab: false,
+      hidden: [],
       // shortkeys
       selected: undefined,
+      // MENU
+      showTrackerMenu: false,
+      // round
+      max_round: 10,
       // hp
       hpDialog: false,
       hpSum: undefined,
@@ -130,13 +175,29 @@ export default {
   },
   computed: {
     ...mapState('ui', ['PERMISSIONS']),
+    ...mapGetters('tracker', {
+      round: 'round',
+      characters: 'characters',
+      activeTracker: 'active'
+    }),
     ...mapGetters('characters', {
       character: 'character',
-      characters: 'sorted',
       CHARACTER_PERMISSIONS: 'permissions'
     }),
     ...mapGetters(['GLOBAL_PERMISSIONS']),
     VIEW() {
+      return (path) => {
+        if (path === undefined) {
+          if (this.GLOBAL_PERMISSIONS.view === undefined) return true
+          const nested = nestedValue(this.GLOBAL_PERMISSIONS.view)
+          return nested === undefined ? true : nested
+        }
+
+        const _nested = nestedValue(_.get(this.GLOBAL_PERMISSIONS.view || {}, path))
+        return _nested === undefined ? true : _nested
+      }
+    },
+    GLOBAL_VIEW() {
       return (path) => {
         if (path === undefined) {
           if (this.GLOBAL_PERMISSIONS.view === undefined) return true
@@ -165,8 +226,14 @@ export default {
         .filter((char) => char !== undefined)
     }
   },
-  created() {},
+  created() {
+    this.trackerInit()
+  },
   methods: {
+    ...mapActions('tracker', {
+      trackerInit: 'init',
+      setRound: 'setRound'
+    }),
     ...mapMutations('characters', ['set_initiative', 'set_hp']),
     ...mapActions('characters', ['init', 'add', 'remove', 'notifyCharacterUpdate']),
     handleAddCharacter({ cancel = false, data = {} } = {}) {
@@ -220,8 +287,8 @@ export default {
       this.set_hp({ _id, value: value + add, key })
       this.notifyCharacterUpdate(_id)
     },
-    onChange(_id) {
-      this.notifyCharacterUpdate(_id)
+    onChange(_id, action) {
+      this.notifyCharacterUpdate({ id: _id, action })
     },
     onRemove(id) {
       this.remove({ id })
@@ -236,6 +303,7 @@ export default {
       const nextIndex = value >= this.characters_with_permissions.length ? 0 : value
 
       this.selected = this.characters_with_permissions[nextIndex].character._id
+      this.$vuetify.goTo(`#item-${this.selected}`)
     },
     handleArrowUp() {
       const currentIndex =
@@ -247,6 +315,7 @@ export default {
       const nextIndex = value < 0 ? this.characters_with_permissions.length + value : value
 
       this.selected = this.characters_with_permissions[nextIndex].character._id
+      this.$vuetify.goTo(`#item-${this.selected}`)
     },
     handleShortKeys(event) {
       switch (event.srcKey) {

@@ -10,20 +10,19 @@ const JSON_SRC_INDEX = 'index.json'
  * @param jsonListName the name of the root JSON property for the list of data
  * @param pPageInit promise to be run once the index has loaded, should accept an object of src:URL mappings
  * @param dataFn function to be run when all data has been loaded, should accept a list of objects custom to the page
- * @param pOptional optional promise to be run after dataFn, but before page history/etc is init'd
+ * @param pDone optional promise to be run after dataFn, but before page history/etc is init'd
  * (e.g. spell data objects for the spell page) which were found in the `jsonListName` list
  */
-export async function pMultisourceLoad(jsonDir, jsonListName, dataFn, pOptional) {
+export async function pMultisourceLoad(jsonDir, jsonListName, dataFn, pDone) {
   const index = await DATA.load(jsonDir + JSON_SRC_INDEX)
-  const loadedSources = _pOnIndexLoad(index, jsonDir, jsonListName, dataFn, pOptional)
+  const loadedSources = _pOnIndexLoad(index, jsonDir, jsonListName, dataFn, pDone)
   return loadedSources
   // pPageInit(loadedSources)
 }
 
-let loadedSources
-async function _pOnIndexLoad(src2UrlMap, jsonDir, dataProp, addFn, pOptional) {
+async function _pOnIndexLoad(src2UrlMap, jsonDir, dataProp, addFn, pDone) {
   // track loaded sources
-  loadedSources = {}
+  const loadedSources = {}
   Object.keys(src2UrlMap).forEach((src) => (loadedSources[src] = { url: jsonDir + src2UrlMap[src], loaded: false }))
 
   // collect a list of sources to load
@@ -93,8 +92,6 @@ async function _pOnIndexLoad(src2UrlMap, jsonDir, dataProp, addFn, pOptional) {
 
   return loadedSources
 
-  // if (pOptional) await pOptional()
-
   // RollerUtil.addListRollButton()
   // ListUtil.addListShowHide()
 
@@ -105,7 +102,7 @@ async function _pOnIndexLoad(src2UrlMap, jsonDir, dataProp, addFn, pOptional) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function loadSource(jsonListName, dataFn) {
+export function makeLoadSource(loadedSources, jsonListName, dataFn) {
   return function(src, val) {
     const toLoad = loadedSources[src] || loadedSources[Object.keys(loadedSources).find((k) => k.toLowerCase() === src)]
     if (!toLoad.loaded && val === 'yes') {

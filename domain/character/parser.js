@@ -1,6 +1,6 @@
 // parser modules are converted from 5etools
 import _ from 'lodash'
-import { ABBREVIATION_TO_FULL, SINGULAR_TO_PLURAL } from '@/utils/system/constants'
+import { ABBREVIATION_TO_FULL, SINGULAR_TO_PLURAL } from '~/domain/system/constants'
 import { toOrdinal } from '~/utils/number'
 import '@/utils/string'
 

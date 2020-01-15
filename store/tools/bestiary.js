@@ -10,7 +10,7 @@ import { sourceJSONToAbv, sourceJSONToFull, sourceJSONToColor } from '~/domain/s
 
 import CHARACTER from '~/domain/character'
 import { warn, info } from '~/utils/debug'
-import { SOURCES } from '~/utils/system/constants'
+import { SOURCES } from '~/domain/system/constants'
 import { load } from '~/utils/data'
 import { getPredefinedFluff } from '~/services/fluff'
 
@@ -27,8 +27,11 @@ export const state = () => ({
     loaded: false
   },
   // data,
+  loaded: undefined,
   sources: {},
-  references: {},
+  references: {
+    meta: {}
+  },
   list: []
 })
 
@@ -41,6 +44,9 @@ export const actions = {
       const metaAndLanguagesLoad = pPopulateMetaAndLanguages()
 
       await Promise.all([multisourceLoad, metaAndLanguagesLoad])
+      state.loaded = await multisourceLoad
+
+      await dispatch('homebrew')
 
       Vue.set(state, 'sources', await multisourceLoad)
       const obj = await metaAndLanguagesLoad
@@ -57,6 +63,23 @@ export const actions = {
       loadedSources: state.sources,
       ...state.references
     }
+  },
+  async homebrew({ state, dispatch }) {
+    // BrewUtil.pAddBrewData()
+    //   .then(handleBrew)
+    //   .then(() => BrewUtil.bind({ list })) // ? Why bind to list?
+    //   .then(() => BrewUtil.pAddLocalBrewData()) // ? Unecessary
+    //   .then(async () => {
+    //     BrewUtil.makeBrewButton('manage-brew')
+    //     BrewUtil.bind({ filterBox: bestiaryPage._pageFilter.filterBox, sourceFilter: bestiaryPage._pageFilter.sourceFilter })
+    //     await ListUtil.pLoadState()
+    //     resolve()
+    //   })
+    const data = await dispatch('tools/brew/load', undefined, { root: true })
+
+    // handleBrew
+    dispatch('addLegendaryGroups', { data: data.legendaryGroup })
+    dispatch('addMonsters', { data: data.monster })
   },
   async fluff({ state, dispatch }) {
     const index = await load('/data/bestiary/' + 'fluff-index.json')
@@ -125,9 +148,9 @@ export const actions = {
               fluffJson.monster.find((it) => fluff._copy.name === it.name && fluff._copy.source === it.source)
             )
             // preserve these
-            const name = fluff.name
+            const { name } = fluff
             const src = fluff.source
-            const images = fluff.images
+            const { images } = fluff
 
             // remove this
             delete fluff._copy
@@ -190,6 +213,7 @@ export const actions = {
 
     log('Finishing fluff')
   },
+  // ADDERS
   addMonsters({ state, commit, dispatch }, { data }) {
     if (!data || !data.length) return
     if (!_.isArray(data)) data = [data]
@@ -220,5 +244,13 @@ export const actions = {
     dispatch('ui/filter/character/doSearch', undefined, { root: true })
 
     log('Finishing Add Monsters', list)
+  },
+  addLegendaryGroups({ state, dispatch }, { data }) {
+    if (!data || !data.length) return
+
+    data.forEach((lg) => {
+      Vue.set(state.references.meta, lg.source, state.references.meta[lg.source] || {})
+      Vue.set(state.references.meta[lg.source], lg.name, lg)
+    })
   }
 }

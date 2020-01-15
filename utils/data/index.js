@@ -4,7 +4,7 @@ import { sortLower } from '../sort'
 import ADAPTER from './adapter'
 import { HASH_BUILDER } from './url'
 import { BASE_URL, PAGES } from '~/utils/data/constants'
-import SYSTEM from '@/utils/system'
+import SYSTEM from '~/domain/system'
 
 async function fetch(url) {
   if (ADAPTER.loading(url) === undefined) {
@@ -98,6 +98,8 @@ async function helper_merge(ident, data, options) {
                     throw new Error(`No dependency _copy merge strategy specified for property "${prop}"`)
                 }
               }
+
+              throw new Error(`No merge strategy specified for property "${prop}"`)
             })
           )
         })
@@ -120,6 +122,7 @@ async function helper_merge(ident, data, options) {
                     throw new Error(`No internal _copy merge strategy specified for property "${prop}"`)
                 }
               }
+              throw new Error(`No dependency _copy merge strategy specified for property "${prop}"`)
             })
           )
         })
@@ -143,7 +146,7 @@ async function helper_merge(ident, data, options) {
         )
 
         additionalData.forEach((dataAndSource) => {
-          const findWith = dataAndSource.findWith
+          const { findWith } = dataAndSource
           const ad = dataAndSource.sourceData
           const toAppend = ad[prop].filter((it) => it.otherSources && it.otherSources.find((os) => os.source === findWith))
           if (toAppend.length) data[prop] = (data[prop] || []).concat(toAppend)
@@ -165,9 +168,10 @@ const generic = (function() {
     if (entry._copy) {
       const hash = HASH_BUILDER[page](entry._copy)
       const it = impl._mergeCache[hash] || _pMergeCopy_search(impl, page, entryList, entry)
-      if (!it) return
+      if (!it) return undefined
       return _pApplyCopy(impl, _.cloneDeep(it), entry, options)
     }
+    return undefined
   }
 
   function _pMergeCopy_search(impl, page, entryList, entry) {
@@ -401,10 +405,10 @@ const generic = (function() {
       if (!copyTo.spellcasting) throw new Error(`Creature did not have a spellcasting property!`)
 
       // TODO could accept a "position" or "name" parameter should spells need to be added to other spellcasting traits
-      const spellcasting = copyTo.spellcasting[0]
+      const [spellcasting] = copyTo.spellcasting
 
       if (modInfo.spells) {
-        const spells = spellcasting.spells
+        const { spells } = spellcasting
 
         Object.keys(modInfo.spells).forEach((k) => {
           if (!spells[k]) spells[k] = modInfo.spells[k]
@@ -454,7 +458,7 @@ const generic = (function() {
       if (!copyTo.spellcasting) throw new Error(`Creature did not have a spellcasting property!`)
 
       // TODO could accept a "position" or "name" parameter should spells need to be added to other spellcasting traits
-      const spellcasting = copyTo.spellcasting[0]
+      const [spellcasting] = copyTo.spellcasting
 
       const handleReplace = (curSpells, replaceMeta, k) => {
         doEnsureArray(replaceMeta, 'with')

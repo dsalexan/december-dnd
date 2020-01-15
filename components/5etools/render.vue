@@ -20,7 +20,9 @@
         <component :is="value.tag">CONTENT</component>
       </template>
       <template v-if="model === 'link'">
-        <a :href="value.href" :target="value.target" :class="`${colorText}`">{{ safe_textPostProcess(computed_text) }}</a>
+        <a :href="value.href" :target="value.target || '_blank'" :class="`${colorText}`">{{
+          safe_textPostProcess(computed_text)
+        }}</a>
       </template>
       <template v-else>OBJECT {{ value }}</template>
       <!-- <template></template> -->

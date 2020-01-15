@@ -1,4 +1,4 @@
-import SOURCE from '@/utils/system/constants/sources'
+import SOURCE from '~/domain/system/constants/sources'
 
 export function hasBeenReprinted(shortName, source) {
   return (

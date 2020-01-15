@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import { warn } from '../debug'
+import { warn } from '../../utils/debug'
 import { SENSES } from './constants'
 
 export function senseToExplanation(senseType) {

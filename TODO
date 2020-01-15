@@ -71,11 +71,11 @@ Initiative Tracker:
     ☐ Maybe stop recording current HP and change to current Damage Taken, current HP becomes a getter
   ✘ Make some tags (like "condition") always visible or default visible @cancelled(20-01-05 04:41)
   ✔ Determinate default permissions related to new characters based on a universal access level from browser storate or query string @done(20-01-05 04:41)
-  ✔ Add a ADMIN json editor for the characters @started(20-01-05 19:26) @done(20-01-05 22:33) @lasted(3h7m36s)
+✔ Add a ADMIN json editor for the characters @started(20-01-05 19:26) @done(20-01-05 22:33) @lasted(3h7m36s)
   ✘ A tag for coin? (at least to keep track of coin) @cancelled(20-01-05 22:37)
   ✔ Fix bug on some bestiary characters other than zariel @done(20-01-05 22:43)
-  ☐ Add homebrew
-  ☐ I think ai have to alow a deffered source load for non  stardard sources somewhere
+  ☐ TESTE      Add homebrew @started(20-01-15 17:56)
+  ☐ TESTE      I think ai have to alow a deffered source load for non  stardard sources somewhere @started(20-01-13 15:43)
   ✔ Add size @done(20-01-07 19:01)
   ✔ Add spellcasting tag (spell attack bonus, DC) @started(20-01-07 18:35) @done(20-01-07 19:17) @lasted(42m44s)
   ✔ Add alignment @done(20-01-07 18:35)
@@ -83,12 +83,36 @@ Initiative Tracker:
   ☐ Add fake name
   ☐ Internacionalizar
   ☐ Add RENDER.BREAKLINE as something like '{@br}' ON RENDER
-  ☐ Add feats
-  ☐ Only display by tracker session
+  ✔ Add feats @started(20-01-09 15:11) @done(20-01-09 15:58) @lasted(47m20s)
+  ✔ Only display by tracker session @started(20-01-09 15:40) @done(20-01-10 17:51) @lasted(1d2h11m36s)
   ☐ Add support for multiple avatars
   ✔ FIX overlay z-index when @done(20-01-08 13:21)
-  ☐ On add character add directly to tracker
+  ✔ On add character add directly to tracker @started(20-01-10 18:55) @done(20-01-10 19:20) @lasted(25m38s)
   ☐ Remove add custom character
+  ✔ ERROR by adding gargoyle fires error on arrow up @done(20-01-10 02:30)
+  ✔ ERROR left arrow jumping size @done(20-01-09 15:39)
+  ✔ ERROR empty tag showing excessive padding @done(20-01-10 02:30)
+  ✔ ERROR adding _blank to links @done(20-01-10 02:31)
+  ☐ PRIORITARY Add indication for current INITIATIVE
+  ☐ Add lair effects/effects in specific initiative counts
+  ✔ Add round counter @done(20-01-09 16:46)
+  ✔ Add toast for notifications @done(20-01-10 18:55)
+  ✔ Arrow up scrolls to target @done(20-01-10 03:02)
+  ✔ Click on listItem selects @started(20-01-10 02:48) @done(20-01-10 02:57) @lasted(9m46s)
+  ✔ Change tracker doesnt change globally @started(20-01-10 17:37) @done(20-01-10 17:51) @lasted(14m32s)
+  ☐ Allow force reload from ADMIN @started(20-01-12 00:32)
+  ☐ BUGFIX On add character doesnt recalc getter tracker/characters
+  ✔ BUGFIX mobile visualization @done(20-01-11 13:09)
+  ☐ Add a slider on HEAL/DAMAGE (mostly for mobile)
+  ☐ BUGFIX on set Round is not working globally
+  ✘ Add some fast edit of permissions (algum jeito de esconder posicicao na iniciativa até que eu resolva mostrar) @started(20-01-11 13:24) @cancelled(20-01-13 14:59) @wasted(2d1h35m14s)
+  ☐ TEST       Characters have a individual defauslt permission, allow edit this on tracker @started(20-01-13 15:02)
+  ✔ Add debounce to filter (and only search more then 3 letters) @done(20-01-13 14:58)
+  ☐ HOW TO CREATE A TRACKER FAST?
+    ☐ Add characters to homebrew, then implement homebrew on filter
+    ☐ Speed-up filter
+  Homebrew:
+    ☐ Load homebrew interface
 Users:
   ✔ List all users @done(20-01-05 04:40)
   ✔ List permissions by user @done(20-01-05 04:40)
@@ -101,12 +125,15 @@ Users:
   ✔ Fix nestedValue @done(20-01-05 22:47)
   ✔ Allow default setting of permissions @started(20-01-07 15:57) @done(20-01-07 17:43) @lasted(1h46m35s)
   ☐ Fix error on loggin with non precistent user
+  ✔ Make another level of tabs for permissions: GLOBAL, TRACKER #1, ... TRACKER #N, and inside each tracker the characters @started(20-01-10 19:24) @done(20-01-10 19:43) @lasted(19m5s)
+  ☐ On login notification not working
 Characters:
   ✔ Add real avatar for LYRA HUMANOID @done(20-01-08 02:02)
   ✔ Create interface to add avatar @done(20-01-08 13:21)
     ✔ Position arguments for thumbnail online @done(20-01-08 13:21)
   ☐ Add character form generated
   ☐ Add character from jSON
+  ☐ Split character AVATARS per tracker too
 Equipment:
   ☐ Treasure
     ☐ Treasure history
@@ -116,7 +143,7 @@ Database:
 Server:
   ☐ Implement domain logic
   ✔ Connect to database @done(20-01-06 17:20)
-  ☐ Separate in TRACKERS (for multiple trackers and different characters)
+  ✔ Separate in TRACKERS (for multiple trackers and different characters) @done(20-01-10 18:55)
 Future:
   ☐ Actions and reactions tracking
   ☐ Spells tracking

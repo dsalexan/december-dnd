@@ -2,6 +2,10 @@ import colors from 'vuetify/es5/util/colors'
 
 export default {
   mode: 'spa',
+  server: {
+    port: 3000, // default: 3000
+    host: '0.0.0.0' // default: localhost
+  },
   /*
    ** Headers of the page
    */
@@ -57,6 +61,7 @@ export default {
   axios: {
     // baseURL: 'http://63de7184.ngrok.io'
     baseURL: 'http://localhost:5000'
+    // baseURL: 'http://192.168.43.48:5000'
   },
   moment: {
     locales: ['pt-BR']

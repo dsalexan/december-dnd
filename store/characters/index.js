@@ -2,9 +2,9 @@ import Vue from 'vue'
 // eslint-disable-next-line no-unused-vars
 import _ from 'lodash'
 
-import { modifier } from '@/utils/system'
+import { modifier } from '~/domain/system'
 
-import Character from '@/domain/character'
+import Character, { simplify } from '@/domain/character'
 // eslint-disable-next-line no-unused-vars
 import CharacterMock from '@/domain/character/mock'
 import Rolls from '@/utils/rolls'
@@ -31,7 +31,7 @@ export const getters = {
     }
 
     if (rootState.me === undefined) {
-      return getters.list.reduce((obj, cur) => ({ ...obj, [cur._id]: defaults('character:hidden') }), {})
+      return getters.list.reduce((obj, cur) => ({ ...obj, [cur._id]: defaults(cur._permission || 'character:hidden') }), {})
     }
 
     const user_permissions = rootState.me.permissions.__CHARACTER__
@@ -41,7 +41,7 @@ export const getters = {
         ...obj,
         [char._id]: isValid(user_permissions[char._id])
           ? user_permissions[char._id]
-          : defaults(getDefault('__CHARACTER__', 'character:hidden'))
+          : defaults(getDefault('__CHARACTER__', char._permission || 'character:hidden'))
       }
     }, {})
     return p
@@ -82,7 +82,7 @@ export const getters = {
         if (images[0].href.type === 'internal') {
           return `img/${images[0].href.path}`
         } else {
-          return images[0].href.path
+          return images[0].href.url
         }
       } else {
         throw new Error('No HREF property in image')
@@ -176,15 +176,15 @@ export const actions = {
     log('Subscribed to notifications channel at pusher (december)')
   },
   // DOMAIN LOGIC?
-  add({ state, dispatch }, { data, notify = true }) {
+  add({ state, dispatch, rootGetters }, { data, notify = true }) {
     const character = Character.make(data)
     Vue.set(state.index, character._id, character)
 
-    log(`Adding character <${character._id}> to tracker`, character)
+    log(`Adding character <${character._id}> to active tracker (${rootGetters['tracker/active']._id})`, character)
 
     if (notify) dispatch('notifyCharacterAdd', character._id)
   },
-  update({ state, dispatch }, { id, data, notify = true }) {
+  update({ state, dispatch }, { id, data, action, notify = true }) {
     if (!isValid(id)) id = data._id
 
     if (!isValid(id)) error(`Character id must be informed in update process`, id, data)
@@ -194,7 +194,7 @@ export const actions = {
 
     log(`Updating character <${id}> at tracker`, character)
 
-    if (notify) dispatch('notifyCharacterUpdate', character._id)
+    if (notify) dispatch('notifyCharacterUpdate', { id: character._id, action })
   },
   updateImage({ state, dispatch }, { id, index, data, notify = true }) {
     if (!isValid(id)) error(`Character id must be informed in update image crop information process`, id, data)
@@ -203,7 +203,7 @@ export const actions = {
 
     log(`Updating character <${id}> image[${index}]`, data)
 
-    if (notify) dispatch('notifyCharacterUpdate', id)
+    if (notify) dispatch('notifyCharacterUpdate', { id, action: 'image' })
   },
   remove({ state, dispatch }, { id, notify = true }) {
     const character = _.cloneDeep(state.index[id])
@@ -216,29 +216,31 @@ export const actions = {
   // API SHIT
 
   // NOTIFY SERVER
-  async notifyCharacterAdd({ state, dispatch }, _id) {
+  async notifyCharacterAdd({ state, dispatch, rootGetters }, _id) {
     const response = await this.$axios.$post(`/characters`, {
-      character: state.index[_id]
+      character: simplify(state.index[_id]),
+      tracker: rootGetters['tracker/active']._id
     })
 
     dispatch('pusher/handleResponse', response, { root: true })
 
-    log(`Notifing server that character <${_id}> has been ADDED`, response)
+    log(`Notifing server that character <${_id}> has been ADDED to tracker ${rootGetters['tracker/active']._id}`, response)
   },
-  async notifyCharacterUpdate({ state, dispatch }, _id) {
-    const response = await this.$axios.$put(`/characters/${_id}`, {
-      character: state.index[_id]
+  async notifyCharacterUpdate({ state, dispatch }, { id, action }) {
+    const response = await this.$axios.$put(`/characters/${id}`, {
+      character: simplify(state.index[id]),
+      action
     })
 
     dispatch('pusher/handleResponse', response, { root: true })
 
-    log(`Notifing server that character <${_id}> has been UPDATED`, response)
+    log(`Notifing server that character <${id}> has been UPDATED`, response)
   },
-  async notifyCharacterRemove({ state, dispatch }, _id) {
-    const response = await this.$axios.$delete(`/characters/${_id}`)
+  async notifyCharacterRemove({ state, dispatch }, id) {
+    const response = await this.$axios.$delete(`/characters/${id}`)
 
     dispatch('pusher/handleResponse', response, { root: true })
 
-    log(`Notifing server that character <${_id}> has been REMOVED`, response)
+    log(`Notifing server that character <${id}> has been REMOVED`, response)
   }
 }
