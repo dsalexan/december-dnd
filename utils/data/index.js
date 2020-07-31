@@ -98,8 +98,6 @@ async function helper_merge(ident, data, options) {
                     throw new Error(`No dependency _copy merge strategy specified for property "${prop}"`)
                 }
               }
-
-              throw new Error(`No merge strategy specified for property "${prop}"`)
             })
           )
         })
@@ -118,11 +116,16 @@ async function helper_merge(ident, data, options) {
                 switch (prop) {
                   case 'monster':
                     return monster.pMergeCopy(data[prop], entry, options)
+                  // case 'item':
+                  //   return DataUtil.item.pMergeCopy(data[prop], entry, options)
+                  // case 'background':
+                  //   return DataUtil.background.pMergeCopy(data[prop], entry, options)
+                  case 'race':
+                    return race.pMergeCopy(data[prop], entry, options)
                   default:
                     throw new Error(`No internal _copy merge strategy specified for property "${prop}"`)
                 }
               }
-              throw new Error(`No dependency _copy merge strategy specified for property "${prop}"`)
             })
           )
         })
@@ -697,5 +700,23 @@ const monster = (function() {
   return {
     pMergeCopy,
     pLoadAll
+  }
+})()
+
+const race = (function() {
+  const impl = {
+    _MERGE_REQUIRES_PRESERVE: {
+      subraces: true,
+      srd: true
+    },
+    _mergeCache: {}
+  }
+
+  function pMergeCopy(raceList, race, options) {
+    return generic._pMergeCopy(impl, PAGES.RACES, raceList, race, options)
+  }
+
+  return {
+    pMergeCopy
   }
 })()

@@ -104,7 +104,7 @@ export const mutations = {
 
     filter.groups.splice(0, filter.groups.length)
   },
-  addItem(state, { key, item, fn }) {
+  addItem(state, { key, item, fn = { changeFn: () => {} } } = {}) {
     const filter = state.filters[key]
     const { changeFn } = fn
 
@@ -543,7 +543,7 @@ export const actions = {
       items: {},
       groups: [],
       value: value !== undefined ? value : model.min === undefined || model.max === undefined ? [] : [model.min, model.max],
-      addItem: (_item, { changeFn }) => {
+      addItem: (_item, { changeFn } = {}) => {
         function _helper(item, fn) {
           if (item === null || item === undefined) return
           if (Array.isArray(item)) item.forEach((it) => _helper(it))

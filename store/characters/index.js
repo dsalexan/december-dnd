@@ -71,7 +71,7 @@ export const getters = {
   },
   avatar(state) {
     return (_id) => {
-      const _images = (state.index[_id]._fluff && state.index[_id]._fluff.images) || []
+      const _images = (state.index[_id].fluff && state.index[_id].fluff.images) || []
       const images = _images.filter((i) => i.type === 'image')
 
       if (images.length > 1) throw new Error('Too many images to decide a avatar')
@@ -199,7 +199,7 @@ export const actions = {
   updateImage({ state, dispatch }, { id, index, data, notify = true }) {
     if (!isValid(id)) error(`Character id must be informed in update image crop information process`, id, data)
 
-    Vue.set(state.index[id]._fluff.images, index, data)
+    Vue.set(state.index[id].fluff.images, index, data)
 
     log(`Updating character <${id}> image[${index}]`, data)
 

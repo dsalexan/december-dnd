@@ -2,7 +2,7 @@
 import _ from 'lodash'
 import { ABBREVIATION_TO_FULL, SINGULAR_TO_PLURAL } from '~/domain/system/constants'
 import { toOrdinal } from '~/utils/number'
-import '@/utils/string'
+import '~/utils/string'
 
 /**
  * @typedef {Object} CreatureType

@@ -1,8 +1,8 @@
 import { CR } from './constants'
 import { LIST_CR } from './constants/cr'
-import { ADD_COMMAS } from '@/utils/regex'
+import { ADD_COMMAS } from '~/utils/regex'
 
-import { toFractional as numberToFractional } from '@/utils/number'
+import { toFractional as numberToFractional } from '~/utils/number'
 
 export function toXp(cr, number = false) {
   if (cr != null && cr.xp) return ADD_COMMAS(cr.xp)

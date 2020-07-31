@@ -75,7 +75,7 @@ export const actions = {
     //     await ListUtil.pLoadState()
     //     resolve()
     //   })
-    const data = await dispatch('tools/brew/load', undefined, { root: true })
+    const data = await dispatch('tools/brew/init', undefined, { root: true })
 
     // handleBrew
     dispatch('addLegendaryGroups', { data: data.legendaryGroup })
@@ -207,7 +207,7 @@ export const actions = {
           handleRecursive(ptrFluff)
         }
 
-        item._fluff = ptrFluff.fluff
+        item.fluff = ptrFluff.fluff
       }
     }
 

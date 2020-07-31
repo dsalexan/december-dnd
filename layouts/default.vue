@@ -41,12 +41,21 @@
             <v-list-item-title>Users</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-spacer></v-spacer>
         <v-list-item v-if="VIEW('pages.pusher')" nuxt to="/pusher">
           <v-list-item-action>
             <v-icon>mdi-test-tube</v-icon>
           </v-list-item-action>
           <v-list-item-content>
             <v-list-item-title>Pusher</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item v-if="VIEW('pages.homebrew')" nuxt to="/homebrew">
+          <v-list-item-action>
+            <v-icon>mdi-glass-mug-variant</v-icon>
+          </v-list-item-action>
+          <v-list-item-content>
+            <v-list-item-title>Homebrew</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>

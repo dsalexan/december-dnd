@@ -1,11 +1,19 @@
 import _ from 'lodash'
 
+import crypt from './crypt'
+
 export function isValid(value) {
   return value !== undefined && value !== null
 }
 
 export default {
-  isValid
+  isValid,
+  int,
+  asArray,
+  sum,
+  bool,
+  hash,
+  color
 }
 
 export function int(value, fallback) {
@@ -26,4 +34,13 @@ export function bool(value, fallback) {
   else if (value === false || value === 'false') return false
 
   return fallback
+}
+
+export function hash(value) {
+  return crypt.md5(JSON.stringify(value))
+}
+
+export function color(value) {
+  // Prevent any injection shenanigans
+  return value.replace(/[^a-fA-F0-9]/g, '').slice(0, 8)
 }

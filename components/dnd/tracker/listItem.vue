@@ -535,15 +535,15 @@ import { info } from '../../../utils/debug'
 import VArrayFieldVue from '../../utils/VArrayField/index.vue'
 import VTagsVue from '../../utils/VTags.vue'
 import { vueSet } from '../../../utils/object'
-import { LIST_ABBREVIATIONS } from '../../../utils/system/constants/abilities'
-import { LIST_SKILLS } from '../../../utils/system/constants/skills'
-import { LIST_CONDITIONS } from '../../../utils/system/constants/conditions'
-import { LIST_LANGUAGES } from '../../../utils/system/constants/languages'
 import { defaults, nestedValue, INDEX_DEFAULT } from '../../../utils/permissions'
 import VCroppingImageVue from '../../utils/VCroppingImage.vue'
+import { LIST_ABBREVIATIONS } from '~/domain/system/constants/abilities'
+import { LIST_SKILLS } from '~/domain/system/constants/skills'
+import { LIST_CONDITIONS } from '~/domain/system/constants/conditions'
+import { LIST_LANGUAGES } from '~/domain/system/constants/languages'
 import { int, isValid } from '@/utils/value'
 import hpVue from '@/components/dnd/tracker/hp.vue'
-import { modifier } from '@/utils/system'
+import { modifier } from '@/domain/system'
 import VEditField from '@/components/utils/VEditField'
 
 import CHARACTER from '@/domain/character'
@@ -588,6 +588,7 @@ export default {
 
     return {
       permissions: INDEX_DEFAULT,
+      permissionDialog: false,
       // shortkeys
       selected_tag: undefined,
       focused_initiative: false,
@@ -755,7 +756,7 @@ export default {
         .toUpperCase()
     },
     avatar() {
-      const _images = (this.$props.value._fluff && this.$props.value._fluff.images) || []
+      const _images = (this.$props.value.fluff && this.$props.value.fluff.images) || []
       const images = _images.filter((i) => i.type === 'image')
 
       // if (images.length > 1) throw new Error('Too many images to decide a avatar')
@@ -775,7 +776,7 @@ export default {
       }
     },
     croppedAvatar() {
-      const _images = (this.$props.value._fluff && this.$props.value._fluff.images) || []
+      const _images = (this.$props.value.fluff && this.$props.value.fluff.images) || []
       const images = _images.filter((i) => i.type === 'image')
 
       // if (images.length > 1) throw new Error('Too many images to decide a avatar')

@@ -53,7 +53,7 @@ export function proficiency_modifier(proficiency, proficiency_bonus, ability, st
 
   const proficiencyModifier = ability_modifier + Math.floor(proficiency_bonus * ratio) + bonus
 
-  return string ? `${proficiencyModifier > 0 ? '+' : ''}${proficiencyModifier}` : proficiencyModifier
+  return string ? `${proficiencyModifier > 0 ? '+' : ''}${proficiencyModifier}` : parseInt(proficiencyModifier)
 }
 
 export const CR = cr

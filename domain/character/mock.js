@@ -1,4 +1,4 @@
-import * as Character from '@/domain/character'
+import * as Character from '~/domain/character'
 
 const base = [
   {
@@ -35,7 +35,7 @@ const base = [
     int: 10,
     wis: 10,
     cha: 10,
-    _fluff: {
+    fluff: {
       images: [
         {
           type: 'image',

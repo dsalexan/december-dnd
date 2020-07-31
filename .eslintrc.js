@@ -31,6 +31,9 @@ module.exports = {
     'prefer-destructuring': 'error',
     'radix': 'off',
     'consistent-return': 'error',
-    'vue/name-property-casing': 'off'
+    'vue/name-property-casing': 'off',
+    'import/no-named-as-default-member': 'off',
+    'consistent-return': 'off',
+    'prefer-destructuring': 'warn'
   }
 }

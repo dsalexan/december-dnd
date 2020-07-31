@@ -3,7 +3,7 @@ import uuid from 'uuid/v4'
 
 import { CreatureTypeText, CreatureLevelText, CreatureCRText } from './parser'
 import { modifier, SKILLS, proficiency_modifier } from '~/domain/system'
-import * as Rolls from '@/utils/rolls'
+import * as Rolls from '~/utils/rolls'
 
 import * as Schemas from '~/schema/december/character'
 import { sort } from '~/utils/sort'
@@ -140,8 +140,8 @@ export function allImmunitiesAndResistances(toParse, key) {
   return out
 }
 
-export function characterSavingThrowBonus(mon, save, string = true, fallback = undefined) {
-  const value = proficiency_modifier((mon.save || {})[save], creatureProficiencyBonus(mon), mon[save], string)
+export function characterSavingThrowBonus(mon, ability, string = true, fallback = undefined) {
+  const value = proficiency_modifier((mon.save || {})[ability], creatureProficiencyBonus(mon), mon[ability], string)
   if (value === undefined) return fallback
   return value
 }

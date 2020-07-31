@@ -132,7 +132,8 @@ export const GLOBAL_DEFAULT = {
       editor: false,
       avatar: false,
       users: false,
-      pusher: false
+      pusher: false,
+      homebrew: false
     }
   }
 }

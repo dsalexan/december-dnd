@@ -73,7 +73,7 @@ export default {
     },
     avatar() {
       return (character) => {
-        const _images = (character._fluff && character._fluff.images) || []
+        const _images = (character.fluff && character.fluff.images) || []
         const images = _images.filter((i) => i.type === 'image')
 
         // if (images.length > 1) throw new Error('Too many images to decide a avatar')
@@ -95,7 +95,7 @@ export default {
     },
     croppedAvatar() {
       return (character) => {
-        const _images = (character._fluff && character._fluff.images) || []
+        const _images = (character.fluff && character.fluff.images) || []
         const images = _images.filter((i) => i.type === 'image')
 
         // if (images.length > 1) throw new Error('Too many images to decide a avatar')
@@ -127,7 +127,7 @@ export default {
       // TODO: Implement support for multiple images
       const crop = this.saveStack[character].data
 
-      const image = this.index[character]._fluff.images[0]
+      const image = this.index[character].fluff.images[0]
 
       this.updateImage({
         id: character,

@@ -82,7 +82,7 @@ Initiative Tracker:
   ☐ Always on TAG (hiding label) -> do that on SIZE
   ☐ Add fake name
   ☐ Internacionalizar
-  ☐ Add RENDER.BREAKLINE as something like '{@br}' ON RENDER
+  ☐ Add RENDER.BREAKLINE as something like '@br' ON RENDER
   ✔ Add feats @started(20-01-09 15:11) @done(20-01-09 15:58) @lasted(47m20s)
   ✔ Only display by tracker session @started(20-01-09 15:40) @done(20-01-10 17:51) @lasted(1d2h11m36s)
   ☐ Add support for multiple avatars
@@ -106,13 +106,14 @@ Initiative Tracker:
   ☐ Add a slider on HEAL/DAMAGE (mostly for mobile)
   ☐ BUGFIX on set Round is not working globally
   ✘ Add some fast edit of permissions (algum jeito de esconder posicicao na iniciativa até que eu resolva mostrar) @started(20-01-11 13:24) @cancelled(20-01-13 14:59) @wasted(2d1h35m14s)
-  ☐ TEST       Characters have a individual defauslt permission, allow edit this on tracker @started(20-01-13 15:02)
+  ☐ TEST       Characters have a individual defauslt permission, allow edit this on tracker @started(20-01-16 20:01)
   ✔ Add debounce to filter (and only search more then 3 letters) @done(20-01-13 14:58)
   ☐ HOW TO CREATE A TRACKER FAST?
-    ☐ Add characters to homebrew, then implement homebrew on filter
+    ✔ Add characters to homebrew @done(20-01-16 18:52)
+    ☐ Implement homebrew on filter
     ☐ Speed-up filter
   Homebrew:
-    ☐ Load homebrew interface
+    ✔ Load homebrew interface @started(20-01-16 19:24) @done(20-01-17 03:33) @lasted(8h9m12s)
 Users:
   ✔ List all users @done(20-01-05 04:40)
   ✔ List permissions by user @done(20-01-05 04:40)

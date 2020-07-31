@@ -2,7 +2,7 @@ import _ from 'lodash'
 
 import Vue from 'vue'
 import makeItem from './item'
-import { sort } from '@/utils/sort'
+import { sort } from '~/utils/sort'
 
 function makeFilterBase({ header, defaultFn, displayFn, sortFn, groupFn } = {}) {
   if (!_.isString(header)) {
